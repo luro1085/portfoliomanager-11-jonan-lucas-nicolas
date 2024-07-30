@@ -3,29 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Manager</title>
+    <title>JSON Reader</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
-    <header>
-        <h1>Portfolio Manager</h1>
-    </header>
-    <main>
-        <section id="portfolio">
-            <h2>Your Portfolio</h2>
-            <div id="portfolio-list">
-                <!-- Portfolio items will be displayed here -->
-            </div>
-        </section>
-        <section id="controls">
-            <h2>Manage Your Portfolio</h2>
-            <form id="add-item-form">
-                <input type="text" id="item-name" placeholder="Asset Name" required>
-                <input type="number" id="item-value" placeholder="Asset Value" required>
-                <button type="submit">Add Item</button>
-            </form>
-        </section>
-    </main>
+    <div class="container">
+        <h1>JSON Reader</h1>
+        <pre id="jsonContent"></pre>
+        <canvas id="volumeChart" width="400" height="200"></canvas>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
