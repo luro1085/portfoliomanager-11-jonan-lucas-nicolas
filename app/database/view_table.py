@@ -15,7 +15,7 @@ mycursor.execute(query)
 rows = mycursor.fetchall()
 column_names = [i[0] for i in mycursor.description]
 
-df = pd.DataFrame(rows, columns=column_names)
+df = pd.DataFrame(rows, columns=column_names).set_index("ticker_symbol")
 
 print(df)
 
