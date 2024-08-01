@@ -1,5 +1,6 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -15,6 +16,33 @@ class Stocks(db.Model):
     price_timestamp = db.Column(db.DateTime, nullable=False)
     opening_price = db.Column(db.Numeric(10, 2), nullable=False)
     closing_price = db.Column(db.Numeric(10, 2), nullable=False)
+    
+class Account(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account_number = db.Column(db.String(20), unique=True, nullable=False)
+    balance = db.Column(db.Numeric(12,2), default=0, nullable=False)
+    
+    def deposit(self, amount):
+        if amount <=0 :
+            return "Deposit amount must be hreater than zero!"
+        
+        self.balance += amount
+        transaction = Transactions(user_id=self.id, transaction_type='Deposit', amount=amount)
+        db.session.add(transaction)
+        db.session.commit()
+        return f"Deposit of ${amount} successful. New balance: ${self.balance}"
+    
+    def withdraw(self, amount):
+        if amount <=0:
+            return "Withdrawal amount must be greater than zero!"
+        if amount > self.balance:
+            return "Insufficient funds!"
+        
+        self.balance -= amount
+        transaction = Transactions(user_id=self.id, transaction_type='Withdrawal', amount=amount)
+        db.session.add(transaction)
+        db.session.commit()
+        return f"Withdrawal of ${amount} successful. New balance: ${self.balance}"
 
 @app.route('/stocks', methods=['GET'])
 def get_stocks():
@@ -27,6 +55,35 @@ def get_stocks():
         'opening_price': str(stock.opening_price),
         'closing_price': str(stock.closing_price)
     } for stock in stocks])
+    
+@app.route('/deposit', methods=['POST'])
+def deposit():
+    data = request.json
+    account_number = data.get('account_number')
+    amount = float(data.get('amount'))
+    
+    account = Account.query.filter_by(account_number=account_number).first()
+    if not account:
+        return jsonify({'error': 'Account not found.'}), 404
+    
+    message = account.deposit(amount)
+    return jsonify({'message': message, 'balance': str(account.balance)})
+
+
+@app.route('/withdraw', methods = ['POST'])
+def withdraw():
+    data = request.json
+    aaccount_number = data.get('account_number')
+    amount = float(data.get('amount'))
+    
+    account = Account.query.filter_by(account_number=account_number).first()
+    if not account:
+        return jsonify({'error': 'Account not found.'}), 404
+    
+    message = account.dwithdraw(amount)
+    return jsonify({'message': message, 'balance': str(account.balance)})
+    
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
