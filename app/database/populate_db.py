@@ -16,7 +16,7 @@ def fetch_and_process_response(url, company_name):
     })
 
     df['ticker_symbol'] = data['ticker']
-    df['company_name'] = 'Tesla Inc.'
+    df['company_name'] = company_name
     df['current_price'] = df['closing_price'] 
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS stocks (
 
 for ticker, url in urls.items():
     latest_data = fetch_and_process_response(url, company_names[ticker])
+    
+    print(company_names[ticker])
 
     sql = """
     INSERT INTO stocks (ticker_symbol, company_name, current_price, price_timestamp, opening_price, closing_price)
@@ -69,7 +71,7 @@ for ticker, url in urls.items():
         current_price=VALUES(current_price),
         price_timestamp=VALUES(price_timestamp),
         opening_price=VALUES(opening_price),
-        closing_price=VALUES(closing_price)
+        closing_price=VALUES(closinice)
     """
     val = (
         latest_data['ticker_symbol'], latest_data['company_name'], latest_data['current_price'], 
