@@ -7,23 +7,28 @@ import json
 def fetch_and_process_response(url, company_name):
     #print(company_name)
     response = requests.get(url)
-    data = response.json()
-    price_data = data['price_data']
+    if response.status_code == 200:
+        data = response.json()
+        price_data = data['price_data']
 
-    df = pd.DataFrame({
-        'timestamp': [item for item in price_data['timestamp']],
-        'opening_price': [item for item in price_data['open']],
-        'closing_price': [item for item in price_data['close']],
-    })
+        df = pd.DataFrame({
+            'timestamp': [item for item in price_data['timestamp']],
+            'opening_price': [item for item in price_data['open']],
+            'closing_price': [item for item in price_data['close']],
+        })
 
-    df['ticker_symbol'] = data['ticker']
-    df['company_name'] = company_name
-    df['current_price'] = df['closing_price'] 
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['ticker_symbol'] = data['ticker']
+        df['company_name'] = company_name
+        df['current_price'] = df['closing_price'] 
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    latest_data = df.loc[df['timestamp'].idxmax()]
-    print(latest_data)
-    return latest_data
+        latest_data = df.loc[df['timestamp'].idxmax()]
+        print(latest_data)
+    
+        return latest_data
+    else:
+        print(f"Failed to fetch data from {url}. Status code: {response.status_code}")
+        return None
 
 urls = {
     "TSLA": "https://c4rm9elh30.execute-api.us-east-1.amazonaws.com/default/cachedPriceData?ticker=TSLA",
