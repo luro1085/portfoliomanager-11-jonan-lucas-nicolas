@@ -1,19 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON der</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Portfolio</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>JSON Reader</h1>
-        <pre id="jsonContent"></pre>
-        <canvas id="volumeChart" width="400" height="200"></canvas>
-    </div>
-    <script src="script.js"></script>
+  <div class="container">
+    <h1>Financial Portfolio</h1>
+    <!-- Dropdown menu for selecting account types -->
+    <select id="accountType" onchange="displayAccount()">
+      <option value="none">Select Account Type</option>
+      <option value="stocks">Stocks</option>
+      <option value="bonds">Bonds</option>
+      <option value="cash">Cash</option>
+    </select>
+    <!-- Div to display account details based on the selected type -->
+    <div id="accountDetails"></div>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
