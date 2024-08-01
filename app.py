@@ -6,10 +6,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:c0nygre@localhost/portfolio_manager'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.route('/')
-def home():
-    return "Welcome to the Stock Portfolio Manager API"
-
 db = SQLAlchemy(app)
 
 class Stocks(db.Model):
