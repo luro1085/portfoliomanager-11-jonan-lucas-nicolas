@@ -1,7 +1,7 @@
-
+/* General body styling */
 body {
-  font-family: 'Roboto', sans-serif;
-  background-color: #f0f8ff;
+  font-family: 'Roboto', sans-serif; /* Use Roboto font */
+  background-color: #f0f8ff; /* Light blue background */
   margin: 0;
   padding: 20px;
 }
@@ -12,17 +12,39 @@ body {
   margin: 0 auto;
   background-color: #fff;
   padding: 20px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  border-radius: 10px; 
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Add a shadow for depth */
+  border-radius: 10px; /* Rounded corners */
 }
 
-
+/* Main heading styling */
 h1 {
   text-align: center;
   margin-bottom: 20px;
-  color: #333; 
+  color: #333; /* Dark text color */
 }
 
+/* Navigation buttons styling */
+nav {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+nav button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #007bff; /* Blue background */
+  color: #fff; /* White text */
+}
+
+nav button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+/* Dropdown menu styling */
 select {
   width: 100%;
   padding: 10px;
@@ -32,7 +54,7 @@ select {
   border: 1px solid #ccc;
 }
 
-
+/* Styling for the account details container */
 #accountDetails {
   display: flex;
   flex-direction: column;
@@ -50,7 +72,7 @@ select {
   background-color: #e6f7ff; /* Light blue background for stock items */
 }
 
-
+/* Styling for the stock info section */
 .stock .info {
   flex-grow: 1;
   font-size: 16px;
@@ -60,7 +82,7 @@ select {
 /* Styling for the buy button */
 .stock button {
   padding: 10px 20px;
-  background-color: #007bff; /* Blue background */
+  background-color: #28a745; /* Green background */
   color: #fff; /* White text */
   border: none;
   border-radius: 5px;
@@ -70,5 +92,14 @@ select {
 
 /* Hover effect for the buy button */
 .stock button:hover {
-  background-color: #0056b3;
+  background-color: #218838; /* Darker green on hover */
+}
+
+/* View containers styling */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
 }
