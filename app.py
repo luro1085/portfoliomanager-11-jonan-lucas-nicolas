@@ -33,6 +33,7 @@ class Transactions(db.Model):
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     quantity = db.Column(db.Integer, nullable=True)
     purchase_price = db.Column(db.Numeric(10, 2), nullable=True)
+    sell_price = db.Column(db.Numeric(10, 2), nullable=True)
     transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
     
 
@@ -67,6 +68,7 @@ def get_transaction():
         'amount': str(transaction.amount),
         'quantity': transaction.quantity,
         'purchase_price': str(transaction.purchase_price),
+        'sell_price': str(transaction.sell_price),
         'transaction_date': transaction.transaction_date.isoformat()
     } for transaction in transactions])
     
@@ -84,23 +86,38 @@ def get_assets():
     } for asset in assets])
 
     
-def update_assets(ticker_symbol, quantity, purchase_price):
+def update_assets(ticker_symbol, quantity, purchase_price, transaction_type):
     asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
+    stock = Stocks.query.filter_by(ticker_symbol=ticker_symbol).first()
+    current_price = stock.current_price if stock else price
     
     if asset:
-        asset.total_quantity += quantity
-        asset.purchase_price = purchase_price
-        asset.total_value = asset.total_quantity * asset.purchase_price
+        if transaction_type == 'buy':
+            asset.total_quantity += quantity
+            asset.purchase_price = current_price
+            asset.total_value = asset.total_quantity * current_price
+        elif transaction_type == 'sell':
+            if asset.total_quantity >= quantity:    
+                asset.total_quantity -= quantity
+                asset.total_value = asset.total_quantity * current_price
+                if asset.total_quantity == 0:
+                    db.session.delete(asset)
+        else: 
+            return False
     else:
-        new_asset = Assets(
-            asset_type='stock',
-            ticker_symbol=ticker_symbol,
-            total_quantity=quantity,
-            purchase_price=purchase_price,
-            total_value=quantity * purchase_price
-        )
-        db.session.add(new_asset)
+        if transaction_type == 'buy':
+            new_asset = Assets(
+                asset_type='stock',
+                ticker_symbol=ticker_symbol,
+                total_quantity=quantity,
+                purchase_price=current_price,
+                total_value=quantity * current_price
+            )
+            db.session.add(new_asset)
+        else:
+            return False
     db.session.commit()
+    return True
     
 @app.route('/buy_stock', methods=['POST'])
 def buy_stock():
@@ -126,9 +143,38 @@ def buy_stock():
     db.session.add(transaction)
     db.session.commit()
     
-    update_assets(ticker_symbol, quantity, purchase_price)
+    update_assets(ticker_symbol, quantity, purchase_price, 'buy')
     
     return jsonify({'message': 'Stock bought successfully', 'purchase_price': str(purchase_price)})
+
+@app.route('/sell_stock', methods=['POST'])
+def sell_stock():
+    data = request.get_json()
+    ticker_symbol = data['ticker_symbol']
+    quantity = data['quantity']
+    
+    stock = Stocks.query.filter_by(ticker_symbol=ticker_symbol).first()
+    if not stock:
+        return jsonify({'message': 'Stock not found'}), 404
+    
+    sell_price = stock.current_price
+    amount = quantity * sell_price
+    
+    transaction = Transactions(
+        transaction_type = 'sell',
+        ticker_symbol = ticker_symbol,
+        amount = amount,
+        quantity = quantity,
+        sell_price = sell_price
+    )
+    
+    db.session.add(transaction)
+    db.session.commit()
+    
+    if not update_assets(ticker_symbol, quantity, sell_price, 'sell'):
+        return jsonify({'message': 'Insufficient quantity to sell'}), 400
+    
+    return jsonify({'message': 'Stock bought successfully', 'sell_price': str(sell_price)})
 
 if __name__ == '__main__':
     app.run(debug=True)

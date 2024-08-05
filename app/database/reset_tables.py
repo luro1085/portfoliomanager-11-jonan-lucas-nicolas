@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     amount DECIMAL(10, 2) NOT NULL,
     quantity INT,
     purchase_price DECIMAL(10, 2),
+    sell_price DECIMAL(10, 2),
     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ticker_symbol) REFERENCES stocks(ticker_symbol)
 )
