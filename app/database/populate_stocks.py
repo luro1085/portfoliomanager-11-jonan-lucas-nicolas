@@ -44,25 +44,25 @@ company_names = {
     "AAPL": "Apple Inc."
 }
 
-mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="c0nygre",
-    database="portfolio_manager"
-)
+# mydb = mysql.connector.connect(
+#     host="localhost",
+#     user="root",
+#     password="c0nygre",
+#     database="portfolio_manager"
+# )
 
-mycursor = mydb.cursor()
+# mycursor = mydb.cursor()
 
-mycursor.execute("""
-CREATE TABLE IF NOT EXISTS stocks (
-    ticker_symbol VARCHAR(10) PRIMARY KEY,
-    company_name VARCHAR(100) NOT NULL,
-    current_price DECIMAL(10, 2) NOT NULL,
-    price_timestamp TIMESTAMP NOT NULL,
-    opening_price DECIMAL(10, 2) NOT NULL,
-    closing_price DECIMAL(10, 2) NOT NULL
-)
-""")
+# mycursor.execute("""
+# CREATE TABLE IF NOT EXISTS stocks (
+#     ticker_symbol VARCHAR(10) PRIMARY KEY,
+#     company_name VARCHAR(100) NOT NULL,
+#     current_price DECIMAL(10, 2) NOT NULL,
+#     price_timestamp TIMESTAMP NOT NULL,
+#     opening_price DECIMAL(10, 2) NOT NULL,
+#     closing_price DECIMAL(10, 2) NOT NULL
+# )
+# """)
 
 for ticker, url in urls.items():
     latest_data = fetch_and_process_response(url, company_names[ticker])
