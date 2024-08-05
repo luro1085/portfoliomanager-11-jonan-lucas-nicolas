@@ -1,3 +1,18 @@
+async function fetchUserAssetData() {
+  try {
+    const response = await fetch('http://127.0.0.1:5000/assets'); 
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const assetsData = await response.json();
+    return assetsData;
+  } catch (error) {
+    console.error('There has been a problem with fetch operation:', error);
+  }
+}
+
+
+
 // Hardcoded JSON data for stocks
 const stocksData = [
   {
@@ -83,44 +98,39 @@ const transactionsData = [
   }
 ];
 
-// Function to display account details based on selected type
-function displayAccount() {
-  // Get the selected account type
-  const accountType = document.getElementById('accountType').value;
+// Function to display stocks
+function displayStocks() {
   // Get the account details container
   const accountDetails = document.getElementById('accountDetails');
   // Clear any existing content
   accountDetails.innerHTML = '';
 
-  // If the selected type is 'stocks', display stock details
-  if (accountType === 'stocks') {
-    stocksData.forEach(stock => {
-      // Create a div element for each stock
-      const stockElement = document.createElement('div');
-      stockElement.classList.add('stock');
+  stocksData.forEach(stock => {
+    // Create a div element for each stock
+    const stockElement = document.createElement('div');
+    stockElement.classList.add('stock');
 
-      // Create a div for stock information
-      const infoElement = document.createElement('div');
-      infoElement.classList.add('info');
-      infoElement.innerHTML = `
-        <strong>${stock.company_name} (${stock.ticker_symbol})</strong><br>
-        Opening Price: $${stock.opening_price}<br>
-        Closing Price: $${stock.closing_price}<br>
-        Current Price: $${stock.current_price}<br>
-        Price Timestamp: ${stock.price_timestamp}
-      `;
+    // Create a div for stock information
+    const infoElement = document.createElement('div');
+    infoElement.classList.add('info');
+    infoElement.innerHTML = `
+      <strong>${stock.company_name} (${stock.ticker_symbol})</strong><br>
+      Opening Price: $${stock.opening_price}<br>
+      Closing Price: $${stock.closing_price}<br>
+      Current Price: $${stock.current_price}<br>
+      Price Timestamp: ${stock.price_timestamp}
+    `;
 
-      // Create a buy button
-      const buyButton = document.createElement('button');
-      buyButton.textContent = 'Buy';
+    // Create a buy button
+    const buyButton = document.createElement('button');
+    buyButton.textContent = 'Buy';
 
-      // Append the info and button to the stock element
-      stockElement.appendChild(infoElement);
-      stockElement.appendChild(buyButton);
-      // Append the stock element to the account details container
-      accountDetails.appendChild(stockElement);
-    });
-  }
+    // Append the info and button to the stock element
+    stockElement.appendChild(infoElement);
+    stockElement.appendChild(buyButton);
+    // Append the stock element to the account details container
+    accountDetails.appendChild(stockElement);
+  });
 }
 
 // Function to show the selected view and hide others
@@ -132,13 +142,18 @@ function showView(viewId) {
   // Show the selected view
   document.getElementById(viewId).style.display = 'block';
   
-  // If the assets overview view is selected, display transaction summary
-  if (viewId === 'assetsOverviewView') {
+  // If the transactions view is selected, display transaction summary
+  if (viewId === 'transactionsView') {
     displayTransactionSummary();
+  }
+
+  // If the stocks view is selected, display stocks
+  if (viewId === 'stocksView') {
+    displayStocks();
   }
 }
 
-// Function to display transaction summary in assets overview
+// Function to display transaction summary in transactions view
 function displayTransactionSummary() {
   const recentTransactions = document.getElementById('recentTransactions');
   const totalBuysElement = document.getElementById('totalBuys');
@@ -178,3 +193,8 @@ function displayTransactionSummary() {
   totalSellsElement.textContent = totalSells;
   totalAmountElement.textContent = totalAmount.toFixed(2);
 }
+
+// Initialize by showing the assets overview view
+document.addEventListener('DOMContentLoaded', () => {
+  showView('assetsOverviewView');
+});
