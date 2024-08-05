@@ -9,6 +9,11 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor()
 
+mycursor.execute("DROP TABLE IF EXISTS transactions")
+mycursor.execute("DROP TABLE IF EXISTS assets")
+mycursor.execute("DROP TABLE IF EXISTS stocks")
+
+
 mycursor.execute("""
 CREATE TABLE IF NOT EXISTS stocks (
     ticker_symbol VARCHAR(10) PRIMARY KEY,
