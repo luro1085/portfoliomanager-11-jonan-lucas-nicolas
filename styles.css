@@ -1,29 +1,28 @@
-/* General body styling */
+
 body {
-  font-family: 'Roboto', sans-serif; /* Use Roboto font */
-  background-color: #f0f8ff; /* Light blue background */
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f8ff; 
   margin: 0;
   padding: 20px;
 }
 
-/* Container for the main content */
 .container {
   max-width: 800px;
   margin: 0 auto;
   background-color: #fff;
   padding: 20px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Add a shadow for depth */
-  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); 
+  border-radius: 10px; 
 }
 
-/* Main heading styling */
+
 h1 {
   text-align: center;
   margin-bottom: 20px;
-  color: #333; /* Dark text color */
+  color: #333; 
 }
 
-/* Navigation buttons styling */
+
 nav {
   display: flex;
   justify-content: space-around;
@@ -36,8 +35,8 @@ nav button {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  background-color: #007bff; /* Blue background */
-  color: #fff; /* White text */
+  background-color: #007bff; 
+  color: #fff; 
 }
 
 nav button:hover {
@@ -69,7 +68,7 @@ select {
   padding: 15px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  background-color: #e6f7ff; /* Light blue background for stock items */
+  background-color: #e6f7ff; 
 }
 
 /* Styling for the stock info section */
@@ -82,8 +81,8 @@ select {
 /* Styling for the buy button */
 .stock button {
   padding: 10px 20px;
-  background-color: #28a745; /* Green background */
-  color: #fff; /* White text */
+  background-color: #28a745;
+  color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -92,7 +91,7 @@ select {
 
 /* Hover effect for the buy button */
 .stock button:hover {
-  background-color: #218838; /* Darker green on hover */
+  background-color: #218838; 
 }
 
 /* View containers styling */
@@ -102,4 +101,27 @@ select {
 
 .view.active {
   display: block;
+}
+
+/* Styling for transaction summary in assets overview */
+.transaction-summary, .transaction-overview {
+  margin-top: 20px;
+}
+
+.transaction-summary ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.transaction-summary li {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.transaction-summary li span {
+  display: block;
+  font-weight: bold;
 }

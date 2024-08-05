@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Financial Portfolio</title>
-  <!-- Link to the external CSS file -->
   <link rel="stylesheet" href="styles.css">
-  <!-- Link to Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -38,10 +36,18 @@
     <!-- Assets Overview View -->
     <div id="assetsOverviewView" class="view" style="display:none;">
       <h2>Assets Overview</h2>
-      <p>Overview of all assets will be displayed here.</p>
+      <div class="transaction-summary">
+        <h3>Recent Transactions</h3>
+        <ul id="recentTransactions"></ul>
+      </div>
+      <div class="transaction-overview">
+        <h3>Transaction Summary (Last 30 Days)</h3>
+        <p>Total Buys: <span id="totalBuys"></span></p>
+        <p>Total Sells: <span id="totalSells"></span></p>
+        <p>Total Amount Traded: $<span id="totalAmount"></span></p>
+      </div>
     </div>
   </div>
-  <!-- Link to the external JavaScript file -->
   <script src="script.js"></script>
 </body>
 </html>

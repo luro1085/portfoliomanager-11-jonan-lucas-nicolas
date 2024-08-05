@@ -34,6 +34,55 @@ const stocksData = [
   }
 ];
 
+// Hardcoded JSON data for transactions
+const transactionsData = [
+  {
+    "amount": "6626.70",
+    "purchase_price": "662.67",
+    "quantity": 10,
+    "ticker_symbol": "TSLA",
+    "transaction_date": "2024-08-01T19:52:06",
+    "transaction_id": 1,
+    "transaction_type": "buy"
+  },
+  {
+    "amount": "6626.70",
+    "purchase_price": "662.67",
+    "quantity": 10,
+    "ticker_symbol": "TSLA",
+    "transaction_date": "2024-08-01T19:55:32",
+    "transaction_id": 2,
+    "transaction_type": "buy"
+  },
+  {
+    "amount": "324.40",
+    "purchase_price": "64.88",
+    "quantity": 5,
+    "ticker_symbol": "C",
+    "transaction_date": "2024-08-01T19:56:11",
+    "transaction_id": 3,
+    "transaction_type": "buy"
+  },
+  {
+    "amount": "6626.70",
+    "purchase_price": "662.67",
+    "quantity": 10,
+    "ticker_symbol": "TSLA",
+    "transaction_date": "2024-08-02T13:26:59",
+    "transaction_id": 4,
+    "transaction_type": "buy"
+  },
+  {
+    "amount": "2664.96",
+    "purchase_price": "222.08",
+    "quantity": 12,
+    "ticker_symbol": "AAPL",
+    "transaction_date": "2024-08-05T14:20:37",
+    "transaction_id": 5,
+    "transaction_type": "buy"
+  }
+];
+
 // Function to display account details based on selected type
 function displayAccount() {
   // Get the selected account type
@@ -82,4 +131,50 @@ function showView(viewId) {
   views.forEach(view => view.style.display = 'none');
   // Show the selected view
   document.getElementById(viewId).style.display = 'block';
+  
+  // If the assets overview view is selected, display transaction summary
+  if (viewId === 'assetsOverviewView') {
+    displayTransactionSummary();
+  }
+}
+
+// Function to display transaction summary in assets overview
+function displayTransactionSummary() {
+  const recentTransactions = document.getElementById('recentTransactions');
+  const totalBuysElement = document.getElementById('totalBuys');
+  const totalSellsElement = document.getElementById('totalSells');
+  const totalAmountElement = document.getElementById('totalAmount');
+  
+  let totalBuys = 0;
+  let totalSells = 0;
+  let totalAmount = 0;
+
+  recentTransactions.innerHTML = '';
+
+  transactionsData.forEach(transaction => {
+    // Create a list item for each transaction
+    const transactionItem = document.createElement('li');
+    transactionItem.innerHTML = `
+      <span>${transaction.transaction_type.toUpperCase()}</span>
+      ${transaction.ticker_symbol} - ${transaction.quantity} shares @ $${transaction.purchase_price} each
+      on ${new Date(transaction.transaction_date).toLocaleString()}
+    `;
+
+    // Append the transaction item to the recent transactions list
+    recentTransactions.appendChild(transactionItem);
+
+    // Update the totals based on transaction type
+    if (transaction.transaction_type === 'buy') {
+      totalBuys += transaction.quantity;
+      totalAmount += parseFloat(transaction.amount);
+    } else if (transaction.transaction_type === 'sell') {
+      totalSells += transaction.quantity;
+      totalAmount -= parseFloat(transaction.amount);
+    }
+  });
+
+  // Update the summary elements with the totals
+  totalBuysElement.textContent = totalBuys;
+  totalSellsElement.textContent = totalSells;
+  totalAmountElement.textContent = totalAmount.toFixed(2);
 }
