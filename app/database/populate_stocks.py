@@ -44,14 +44,14 @@ company_names = {
     "AAPL": "Apple Inc."
 }
 
-# mydb = mysql.connector.connect(
-#     host="localhost",
-#     user="root",
-#     password="c0nygre",
-#     database="portfolio_manager"
-# )
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="c0nygre",
+    database="portfolio_manager"
+)
 
-# mycursor = mydb.cursor()
+mycursor = mydb.cursor()
 
 # mycursor.execute("""
 # CREATE TABLE IF NOT EXISTS stocks (
