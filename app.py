@@ -30,21 +30,28 @@ class Transactions(db.Model):
     transaction_id = db.Column(db.Integer, primary_key=True)
     transaction_type = db.Column(db.String(50), nullable=False)
     ticker_symbol = db.Column(db.String(10), db.ForeignKey('stocks.ticker_symbol'))
-    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    company_name = db.Column(db.String(50), nullable=False)
+    purchase_cost = db.Column(db.Numeric(10, 2), nullable=True)
+    sale_revenue = db.Column(db.Numeric(10, 2), nullable=True)
     quantity = db.Column(db.Integer, nullable=True)
     purchase_price = db.Column(db.Numeric(10, 2), nullable=True)
     sell_price = db.Column(db.Numeric(10, 2), nullable=True)
-    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+    transaction_datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    portfolio_value_before = db.Column(db.Numeric(10, 2), nullable=False)
+    portfolio_value_after = db.Column(db.Numeric(10, 2), nullable=True)
     
 
 class Assets(db.Model):
     asset_id = db.Column(db.Integer, primary_key=True)
     asset_type = db.Column(db.String(50), nullable=False)
     ticker_symbol = db.Column(db.String(10), db.ForeignKey('stocks.ticker_symbol'))
+    company_name = db.Column(db.String(50), nullable=False)
     total_quantity = db.Column(db.Integer, nullable=False)
-    purchase_price = db.Column(db.Numeric(10, 2), nullable=False)
-    total_value = db.Column(db.Numeric(10, 2), nullable=False)
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    total_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    current_total_market_value = db.Column(db.Numeric(10, 2), nullable=False)
+    total_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    percentage_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    last_updated_timestamp = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 @app.route('/stocks', methods=['GET'])
 def get_stocks():
@@ -59,17 +66,21 @@ def get_stocks():
     } for stock in stocks])
     
 @app.route('/transactions', methods=['GET'])
-def get_transaction():
+def get_transactions():
     transactions = Transactions.query.all()
     return jsonify([{
         'transaction_id': transaction.transaction_id,
         'transaction_type': transaction.transaction_type,
         'ticker_symbol': transaction.ticker_symbol,
-        'amount': str(transaction.amount),
+        'company_name': transaction.company_name,
+        'purchase_cost': str(transaction.purchase_cost),
+        'sale_revenue': str(transaction.sale_revenue),
         'quantity': transaction.quantity,
         'purchase_price': str(transaction.purchase_price),
         'sell_price': str(transaction.sell_price),
-        'transaction_date': transaction.transaction_date.isoformat()
+        'transaction_datetime': transaction.transaction_datetime.isoformat(),
+        'portfolio_value_before': str(transaction.portfolio_value_before),
+        'portfolio_value_after': str(transaction.portfolio_value_after)
     } for transaction in transactions])
     
 @app.route('/assets', methods=['GET'])
@@ -79,45 +90,62 @@ def get_assets():
         'asset_id': asset.asset_id,
         'asset_type': asset.asset_type,
         'ticker_symbol': asset.ticker_symbol,
+        'company_name': asset.company_name,
         'total_quantity': asset.total_quantity,
-        'purchase_price': str(asset.purchase_price),
-        'total_value': str(asset.total_value),
-        'last_updated': asset.last_updated.isoformat()
+        'total_cost': str(asset.total_cost),
+        'current_total_market_value': str(asset.current_total_market_value),
+        'total_value_change_from_cost': str(asset.total_value_change_from_cost),
+        'percentage_value_change_from_cost': str(asset.percentage_value_change_from_cost),
+        'last_updated_timestamp': asset.last_updated_timestamp.isoformat()
     } for asset in assets])
 
+
     
-def update_assets(ticker_symbol, quantity, purchase_price, transaction_type):
+def update_assets(ticker_symbol, quantity, transaction_price, transaction_type):
     asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
-    stock = Stocks.query.filter_by(ticker_symbol=ticker_symbol).first()
-    current_price = stock.current_price if stock else price
     
     if asset:
-        if transaction_type == 'buy':
+        if transaction_type == 'buy': 
             asset.total_quantity += quantity
-            asset.purchase_price = current_price
-            asset.total_value = asset.total_quantity * current_price
+            asset.total_cost =  asset.total_cost + (transaction_price * quantity)
         elif transaction_type == 'sell':
             if asset.total_quantity >= quantity:    
                 asset.total_quantity -= quantity
-                asset.total_value = asset.total_quantity * current_price
+                asset.total_cost = asset.total_cost - (transaction_price * quantity)
                 if asset.total_quantity == 0:
                     db.session.delete(asset)
         else: 
             return False
+        
+        asset.current_total_market_value = asset.total_quantity * transaction_price
+        asset.total_value_change_from_cost = asset.current_total_market_value - asset.total_cost
+        asset.percentage_value_change_from_cost = (asset.total_value_change_from_cost / asset.current_total_market_value) * 100
+        
     else:
         if transaction_type == 'buy':
             new_asset = Assets(
                 asset_type='stock',
                 ticker_symbol=ticker_symbol,
+                company_name=Stocks.query.filter_by(ticker_symbol=ticker_symbol).first().company_name,
                 total_quantity=quantity,
-                purchase_price=current_price,
-                total_value=quantity * current_price
+                total_cost = quantity * transaction_price,
+                current_total_market_value = quantity * transaction_price,
+                total_value_change_from_cost = 0,
+                percentage_value_change_from_cost = 0
             )
             db.session.add(new_asset)
+            
         else:
             return False
+        
     db.session.commit()
     return True
+    
+    
+def get_portfolio_value():
+    assets = Assets.query.all()
+    total_value = sum([asset.current_total_market_value for asset in assets])
+    return total_value
     
 @app.route('/buy_stock', methods=['POST'])
 def buy_stock():
@@ -130,14 +158,18 @@ def buy_stock():
         return jsonify({'message': 'Stock not found'}), 404
     
     purchase_price = stock.current_price
-    amount = quantity * purchase_price
+    purchase_cost = quantity * purchase_price
+    portfolio_value_before = get_portfolio_value()
     
     transaction = Transactions(
         transaction_type = 'buy',
         ticker_symbol = ticker_symbol,
-        amount = amount,
+        company_name = stock.company_name,
+        purchase_cost = purchase_cost,
         quantity = quantity,
-        purchase_price = purchase_price
+        purchase_price = purchase_price,
+        portfolio_value_before = portfolio_value_before,
+        portfolio_value_after = portfolio_value_before + purchase_cost
     )
     
     db.session.add(transaction)
@@ -158,14 +190,18 @@ def sell_stock():
         return jsonify({'message': 'Stock not found'}), 404
     
     sell_price = stock.current_price
-    amount = quantity * sell_price
+    sale_revenue = quantity * sell_price
+    portfolio_value_before = get_portfolio_value()
     
     transaction = Transactions(
         transaction_type = 'sell',
         ticker_symbol = ticker_symbol,
-        amount = amount,
+        company_name = stock.company_name,
+        sale_revenue = sale_revenue,
         quantity = quantity,
-        sell_price = sell_price
+        sell_price = sell_price,
+        portfolio_value_before = portfolio_value_before,
+        portfolio_value_after = portfolio_value_before - sale_revenue
     )
     
     db.session.add(transaction)
@@ -174,7 +210,7 @@ def sell_stock():
     if not update_assets(ticker_symbol, quantity, sell_price, 'sell'):
         return jsonify({'message': 'Insufficient quantity to sell'}), 400
     
-    return jsonify({'message': 'Stock bought successfully', 'sell_price': str(sell_price)})
+    return jsonify({'message': 'Stock sold successfully', 'sell_price': str(sell_price)})
 
 if __name__ == '__main__':
     app.run(debug=True)
