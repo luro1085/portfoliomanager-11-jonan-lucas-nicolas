@@ -1,19 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON der</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Portfolio</title>
+  <!-- Link to the external CSS file -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Link to Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>JSON Reader</h1>
-        <pre id="jsonContent"></pre>
-        <canvas id="volumeChart" width="400" height="200"></canvas>
+  <div class="container">
+    <h1>Financial Portfolio</h1>
+    <!-- Navigation for different views -->
+    <nav>
+      <button onclick="showView('assetsOverviewView')">Assets Overview</button>
+      <button onclick="fetchUserAssetData().then(data => {console.log('here is data' + data)})">Cash Account</button>
+      <button onclick="showView('transactionsView')">Transactions</button>
+      <button onclick="showView('stocksView')">Stocks</button>
+    </nav>
+    
+    <!-- Assets Overview View -->
+    <div id="assetsOverviewView" class="view">
+      <h2>Assets Overview</h2>
+      <p>Details about assets will be displayed here.</p>
     </div>
-    <script src="script.js"></script>
+    
+    <!-- Cash Account View -->
+    <div id="cashAccountView" class="view" style="display:none;">
+      <h2>Cash Account</h2>
+      <p>Details about cash accounts will be displayed here.</p>
+    </div>
+    
+    <!-- Transactions View -->
+    <div id="transactionsView" class="view" style="display:none;">
+      <h2>Transactions</h2>
+      <div class="transaction-summary">
+        <h3>Recent Transactions</h3>
+        <ul id="recentTransactions"></ul>
+      </div>
+      <div class="transaction-overview">
+        <h3>Transaction Summary (Last 30 Days)</h3>
+        <p>Total Buys: <span id="totalBuys"></span></p>
+        <p>Total Sells: <span id="totalSells"></span></p>
+        <p>Total Amount Traded: $<span id="totalAmount"></span></p>
+      </div>
+    </div>
+    
+    <!-- Stocks View -->
+    <div id="stocksView" class="view" style="display:none;">
+      <h2>Available Stocks</h2>
+      <div id="accountDetails"></div>
+    </div>
+  </div>
+  <!-- Link to the external JavaScript file -->
+  <script src="script.js"></script>
 </body>
 </html>
