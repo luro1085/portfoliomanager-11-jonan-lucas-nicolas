@@ -113,8 +113,7 @@ async function displayStocks() {
       buyButton.textContent = 'Buy';
       buyButton.addEventListener('click', () => {
         const numberOfShares = shareSelector.value;
-        // Functionality to buy shares will be added here later
-        console.log(`Buying ${numberOfShares} shares of ${stock.company_name}`);
+        buyStock(stock, numberOfShares); // Call the buyStock function with the stock data and number of shares
       });
 
       stockElement.appendChild(infoElement);
@@ -122,6 +121,34 @@ async function displayStocks() {
       stockElement.appendChild(buyButton);
       accountDetails.appendChild(stockElement);
     });
+  }
+}
+
+// Function to buy stock
+async function buyStock(stock, numberOfShares) {
+  const newTransaction = {
+    ticker_symbol: stock.ticker_symbol,
+    quantity: parseInt(numberOfShares) // Ensure the quantity is an integer
+  };
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/buy_stock', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newTransaction)
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      displayAssets(); // Refresh assets view
+      displayTransactionSummary(); // Refresh transactions view
+    } else {
+      alert(`Error: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error:', error);
   }
 }
 
