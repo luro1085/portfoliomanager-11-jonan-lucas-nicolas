@@ -70,8 +70,7 @@ async function displayAssets() {
       sellButton.textContent = 'Sell';
       sellButton.addEventListener('click', () => {
         const numberOfShares = sellShareSelector.value;
-        // Functionality to sell shares will be added here later
-        console.log(`Selling ${numberOfShares} shares of ${asset.company_name}`);
+        sellStock(asset, numberOfShares); // Call the sellStock function with the asset data and number of shares
       });
 
       assetElement.appendChild(infoElement);
@@ -152,6 +151,34 @@ async function buyStock(stock, numberOfShares) {
   }
 }
 
+// Function to sell stock
+async function sellStock(asset, numberOfShares) {
+  const newTransaction = {
+    ticker_symbol: asset.ticker_symbol,
+    quantity: parseInt(numberOfShares) // Ensure the quantity is an integer
+  };
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/sell_stock', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newTransaction)
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      displayAssets(); // Refresh assets view
+      displayTransactionSummary(); // Refresh transactions view
+    } else {
+      alert(`Error: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
 // Function to display transaction summary in transactions view
 async function displayTransactionSummary() {
   const recentTransactions = document.getElementById('recentTransactions');
@@ -165,11 +192,14 @@ async function displayTransactionSummary() {
   const transactionsData = await fetchTransactionData();
 
   if (transactionsData) {
+    // Sort transactions by datetime in descending order
+    transactionsData.sort((a, b) => new Date(b.transaction_datetime) - new Date(a.transaction_datetime));
+
     transactionsData.forEach(transaction => {
       const transactionItem = document.createElement('li');
       transactionItem.innerHTML = `
         <span>${transaction.transaction_type.toUpperCase()}</span>
-        ${transaction.ticker_symbol} - ${transaction.quantity} shares @ $${transaction.purchase_price_per_share} each
+        ${transaction.ticker_symbol} - ${transaction.quantity} shares @ $${transaction.purchase_price_per_share || transaction.sell_price_per_share} each
         on ${new Date(transaction.transaction_datetime).toLocaleString()}
       `;
       recentTransactions.appendChild(transactionItem);
