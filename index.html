@@ -15,7 +15,7 @@
     <!-- Navigation for different views -->
     <nav>
       <button onclick="showView('assetsOverviewView')">Assets Overview</button>
-      <button onclick="fetchUserAssetData().then(data => {console.log('here is data' + data)})">Cash Account</button>
+      <button onclick="showView('cashAccountView')">Cash Account</button>
       <button onclick="showView('transactionsView')">Transactions</button>
       <button onclick="showView('stocksView')">Stocks</button>
     </nav>
@@ -23,7 +23,7 @@
     <!-- Assets Overview View -->
     <div id="assetsOverviewView" class="view">
       <h2>Assets Overview</h2>
-      <p>Details about assets will be displayed here.</p>
+      <div id="assetsDetails"></div>
     </div>
     
     <!-- Cash Account View -->

@@ -1,17 +1,67 @@
-async function fetchUserAssetData() {
-  try {
-    const response = await fetch('http://127.0.0.1:5000/assets'); 
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const assetsData = await response.json();
-    return assetsData;
-  } catch (error) {
-    console.error('There has been a problem with fetch operation:', error);
+// async function fetchUserAssetData() {
+//   try {
+//     const response = await fetch('http://127.0.0.1:5000/assets'); 
+//     if (!response.ok) {
+//       throw new Error('Network response was not ok');
+//     }
+//     const assetsData = await response.json();
+//     return assetsData;
+//   } catch (error) {
+//     console.error('There has been a problem with fetch operation:', error);
+//   }
+// }
+// fetchUserAssetData().then(data => {console.log('here is data' + data)})
+// Hardcoded JSON data for assets
+const assetsData = [
+  {
+    "asset_id": 1,
+    "asset_type": "stock",
+    "company_name": "Amazon Inc.",
+    "current_total_market_value": "321.26",
+    "last_updated_timestamp": "2024-08-06T13:56:19",
+    "percentage_value_change_from_cost": "0.00",
+    "ticker_symbol": "AMZN",
+    "total_cost": "321.26",
+    "total_quantity": 2,
+    "total_value_change_from_cost": "0.00"
+  },
+  {
+    "asset_id": 2,
+    "asset_type": "stock",
+    "company_name": "Apple Inc.",
+    "current_total_market_value": "1027.40",
+    "last_updated_timestamp": "2024-08-06T13:56:19",
+    "percentage_value_change_from_cost": "0.00",
+    "ticker_symbol": "AAPL",
+    "total_cost": "1027.40",
+    "total_quantity": 5,
+    "total_value_change_from_cost": "0.00"
+  },
+  {
+    "asset_id": 3,
+    "asset_type": "stock",
+    "company_name": "Tesla Inc.",
+    "current_total_market_value": "3313.35",
+    "last_updated_timestamp": "2024-08-06T13:56:19",
+    "percentage_value_change_from_cost": "0.00",
+    "ticker_symbol": "TSLA",
+    "total_cost": "3313.35",
+    "total_quantity": 5,
+    "total_value_change_from_cost": "0.00"
+  },
+  {
+    "asset_id": 4,
+    "asset_type": "stock",
+    "company_name": "Citigroup Inc.",
+    "current_total_market_value": "563.40",
+    "last_updated_timestamp": "2024-08-06T13:56:19",
+    "percentage_value_change_from_cost": "0.00",
+    "ticker_symbol": "C",
+    "total_cost": "563.40",
+    "total_quantity": 10,
+    "total_value_change_from_cost": "0.00"
   }
-}
-
-
+];
 
 // Hardcoded JSON data for stocks
 const stocksData = [
@@ -98,6 +148,33 @@ const transactionsData = [
   }
 ];
 
+// Function to display assets
+function displayAssets() {
+  // Get the assets details container
+  const assetsDetails = document.getElementById('assetsDetails');
+  // Clear any existing content
+  assetsDetails.innerHTML = '';
+
+  assetsData.forEach(asset => {
+    // Create a div element for each asset
+    const assetElement = document.createElement('div');
+    assetElement.classList.add('asset');
+
+    // Create a div for asset information
+    const infoElement = document.createElement('div');
+    infoElement.classList.add('info');
+    infoElement.innerHTML = `
+      <strong>${asset.company_name} (${asset.ticker_symbol})</strong><br>
+      Quantity: ${asset.total_quantity}
+    `;
+
+    // Append the info to the asset element
+    assetElement.appendChild(infoElement);
+    // Append the asset element to the assets details container
+    assetsDetails.appendChild(assetElement);
+  });
+}
+
 // Function to display stocks
 function displayStocks() {
   // Get the account details container
@@ -142,6 +219,11 @@ function showView(viewId) {
   // Show the selected view
   document.getElementById(viewId).style.display = 'block';
   
+  // If the assets overview view is selected, display assets
+  if (viewId === 'assetsOverviewView') {
+    displayAssets();
+  }
+
   // If the transactions view is selected, display transaction summary
   if (viewId === 'transactionsView') {
     displayTransactionSummary();
