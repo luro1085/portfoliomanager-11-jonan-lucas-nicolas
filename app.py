@@ -34,11 +34,11 @@ class Transactions(db.Model):
     purchase_cost = db.Column(db.Numeric(10, 2), nullable=True)
     sale_revenue = db.Column(db.Numeric(10, 2), nullable=True)
     quantity = db.Column(db.Integer, nullable=True)
-    purchase_price = db.Column(db.Numeric(10, 2), nullable=True)
-    sell_price = db.Column(db.Numeric(10, 2), nullable=True)
+    purchase_price_per_share = db.Column(db.Numeric(10, 2), nullable=True) # per share
+    sell_price_per_share = db.Column(db.Numeric(10, 2), nullable=True) # per share
     transaction_datetime = db.Column(db.DateTime, default=datetime.utcnow)
-    portfolio_value_before = db.Column(db.Numeric(10, 2), nullable=False)
-    portfolio_value_after = db.Column(db.Numeric(10, 2), nullable=True)
+    #portfolio_value_before = db.Column(db.Numeric(10, 2), nullable=False)
+    #portfolio_value_after = db.Column(db.Numeric(10, 2), nullable=True)
     
 
 class Assets(db.Model):
@@ -48,9 +48,9 @@ class Assets(db.Model):
     company_name = db.Column(db.String(50), nullable=False)
     total_quantity = db.Column(db.Integer, nullable=False)
     total_cost = db.Column(db.Numeric(10, 2), nullable=False)
-    current_total_market_value = db.Column(db.Numeric(10, 2), nullable=False)
-    total_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False)
-    percentage_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    #current_total_market_value = db.Column(db.Numeric(10, 2), nullable=False)
+    #total_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False) 
+    #percentage_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False)
     last_updated_timestamp = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 @app.route('/stocks', methods=['GET'])
@@ -76,11 +76,11 @@ def get_transactions():
         'purchase_cost': str(transaction.purchase_cost),
         'sale_revenue': str(transaction.sale_revenue),
         'quantity': transaction.quantity,
-        'purchase_price': str(transaction.purchase_price),
-        'sell_price': str(transaction.sell_price),
+        'purchase_price_per_share': str(transaction.purchase_price_per_share),
+        'sell_price_per_share': str(transaction.sell_price_per_share),
         'transaction_datetime': transaction.transaction_datetime.isoformat(),
-        'portfolio_value_before': str(transaction.portfolio_value_before),
-        'portfolio_value_after': str(transaction.portfolio_value_after)
+        #'portfolio_value_before': str(transaction.portfolio_value_before),
+        #'portfolio_value_after': str(transaction.portfolio_value_after)
     } for transaction in transactions])
     
 @app.route('/assets', methods=['GET'])
@@ -93,9 +93,9 @@ def get_assets():
         'company_name': asset.company_name,
         'total_quantity': asset.total_quantity,
         'total_cost': str(asset.total_cost),
-        'current_total_market_value': str(asset.current_total_market_value),
-        'total_value_change_from_cost': str(asset.total_value_change_from_cost),
-        'percentage_value_change_from_cost': str(asset.percentage_value_change_from_cost),
+        #'current_total_market_value': str(asset.current_total_market_value),
+        #'total_value_change_from_cost': str(asset.total_value_change_from_cost),
+        #'percentage_value_change_from_cost': str(asset.percentage_value_change_from_cost),
         'last_updated_timestamp': asset.last_updated_timestamp.isoformat()
     } for asset in assets])
 
@@ -117,9 +117,9 @@ def update_assets(ticker_symbol, quantity, transaction_price, transaction_type):
         else: 
             return False
         
-        asset.current_total_market_value = asset.total_quantity * transaction_price
-        asset.total_value_change_from_cost = asset.current_total_market_value - asset.total_cost
-        asset.percentage_value_change_from_cost = (asset.total_value_change_from_cost / asset.current_total_market_value) * 100
+        #asset.current_total_market_value = asset.total_quantity * transaction_price
+        #asset.total_value_change_from_cost = asset.current_total_market_value - asset.total_cost
+        #asset.percentage_value_change_from_cost = (asset.total_value_change_from_cost / asset.current_total_market_value) * 100
         
     else:
         if transaction_type == 'buy':
@@ -129,9 +129,9 @@ def update_assets(ticker_symbol, quantity, transaction_price, transaction_type):
                 company_name=Stocks.query.filter_by(ticker_symbol=ticker_symbol).first().company_name,
                 total_quantity=quantity,
                 total_cost = quantity * transaction_price,
-                current_total_market_value = quantity * transaction_price,
-                total_value_change_from_cost = 0,
-                percentage_value_change_from_cost = 0
+                #current_total_market_value = quantity * transaction_price,
+                #total_value_change_from_cost = 0,
+                #percentage_value_change_from_cost = 0
             )
             db.session.add(new_asset)
             
@@ -159,7 +159,7 @@ def buy_stock():
     
     purchase_price = stock.current_price
     purchase_cost = quantity * purchase_price
-    portfolio_value_before = get_portfolio_value()
+    #portfolio_value_before = get_portfolio_value()
     
     transaction = Transactions(
         transaction_type = 'buy',
@@ -167,9 +167,9 @@ def buy_stock():
         company_name = stock.company_name,
         purchase_cost = purchase_cost,
         quantity = quantity,
-        purchase_price = purchase_price,
-        portfolio_value_before = portfolio_value_before,
-        portfolio_value_after = portfolio_value_before + purchase_cost
+        purchase_price_per_share = purchase_price,
+        #portfolio_value_before = portfolio_value_before,
+        #portfolio_value_after = portfolio_value_before + purchase_cost
     )
     
     db.session.add(transaction)
@@ -191,7 +191,7 @@ def sell_stock():
     
     sell_price = stock.current_price
     sale_revenue = quantity * sell_price
-    portfolio_value_before = get_portfolio_value()
+    #portfolio_value_before = get_portfolio_value()
     
     transaction = Transactions(
         transaction_type = 'sell',
@@ -199,9 +199,9 @@ def sell_stock():
         company_name = stock.company_name,
         sale_revenue = sale_revenue,
         quantity = quantity,
-        sell_price = sell_price,
-        portfolio_value_before = portfolio_value_before,
-        portfolio_value_after = portfolio_value_before - sale_revenue
+        sell_price_per_share = sell_price,
+        #portfolio_value_before = portfolio_value_before,
+        #portfolio_value_after = portfolio_value_before - sale_revenue
     )
     
     db.session.add(transaction)
