@@ -40,6 +40,21 @@ async function fetchTransactionData() {
   }
 }
 
+// Function to fetch cash account data from the API
+async function fetchCashAccountData() {
+  try {
+    const response = await fetch('http://127.0.0.1:5000/cash_account');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const cashAccountData = await response.json();
+    console.log(cashAccountData)
+    return cashAccountData;
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+  }
+}
+
 // Function to create a chart of assets overview
 async function createAssetsOverviewChart(){
   const canvas = document.getElementById('assetsOverviewChart');
@@ -92,45 +107,64 @@ async function displayAssets() {
     assetsData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
 
     assetsData.forEach(asset => {
-      const assetElement = document.createElement('div');
-      assetElement.classList.add('asset');
-      const infoElement = document.createElement('div');
-      infoElement.classList.add('info');
-      infoElement.innerHTML = `
-        <strong>${asset.company_name} (${asset.ticker_symbol})</strong><br>
-        Quantity: ${asset.total_quantity}<br>
-        Total Cost: $${asset.total_cost}
-      `;
+      if (asset.asset_type == 'stock') {
+        const assetElement = document.createElement('div');
+        assetElement.classList.add('asset');
+        const infoElement = document.createElement('div');
+        infoElement.classList.add('info');
+        infoElement.innerHTML = `
+          <strong>${asset.company_name} (${asset.ticker_symbol})</strong><br>
+          Quantity: ${asset.total_quantity}<br>
+          Total Cost: $${asset.total_cost}
+        `;
 
-      // Create a share number selector for selling shares
-      const sellShareSelector = document.createElement('input');
-      sellShareSelector.type = 'number';
-      sellShareSelector.min = 1;
-      sellShareSelector.value = 1;
-      sellShareSelector.classList.add('share-selector');
+        // Create a share number selector for selling shares
+        const sellShareSelector = document.createElement('input');
+        sellShareSelector.type = 'number';
+        sellShareSelector.min = 1;
+        sellShareSelector.value = 1;
+        sellShareSelector.classList.add('share-selector');
 
-      // Create a sell button
-      const sellButton = document.createElement('button');
-      sellButton.textContent = 'Sell';
-      sellButton.addEventListener('click', () => {
-        const numberOfShares = parseFloat(sellShareSelector.value);
-        if (numberOfShares < 1 || !Number.isInteger(numberOfShares)) {
-          alert("The operation could not be completed. Please enter a valid number of shares (positive integer).");
-        } else if (numberOfShares > asset.total_quantity) {
-          alert("You can't perform this sale. You are trying to sell more shares than you own.");
-        } else {
-          sellStock(asset, numberOfShares); // Call the sellStock function with the asset data and number of shares
-        }
-      });
+        // Create a sell button
+        const sellButton = document.createElement('button');
+        sellButton.textContent = 'Sell';
+        sellButton.addEventListener('click', () => {
+          const numberOfShares = parseFloat(sellShareSelector.value);
+          if (numberOfShares < 1 || !Number.isInteger(numberOfShares)) {
+            alert("The operation could not be completed. Please enter a valid number of shares (positive integer).");
+          } else if (numberOfShares > asset.total_quantity) {
+            alert("You can't perform this sale. You are trying to sell more shares than you own.");
+          } else {
+            sellStock(asset, numberOfShares); // Call the sellStock function with the asset data and number of shares
+          }
+        });
 
-      assetElement.appendChild(infoElement);
-      assetElement.appendChild(sellShareSelector);
-      assetElement.appendChild(sellButton);
-      assetsDetails.appendChild(assetElement);
-    });
+        assetElement.appendChild(infoElement);
+        assetElement.appendChild(sellShareSelector);
+        assetElement.appendChild(sellButton);
+        assetsDetails.appendChild(assetElement);
+      }
+    }
+  );
+    
 
     // Create the chart after displaying the assets
     createAssetsOverviewChart();
+  }
+}
+
+// Function to display cash account details
+async function displayCashAccount() {
+  const cashAccountDetails = document.getElementById('cashAccountDetails');
+  cashAccountDetails.innerHTML = '';
+  const cashAccountData = await fetchCashAccountData();
+
+  if (cashAccountData) {
+    const accountInfo = `
+      <p>Cash Balance: $${cashAccountData.balance}</p>
+      <p>Last Updated: ${new Date(cashAccountData.last_updated_timestamp).toLocaleString()}</p>
+    `;
+    cashAccountDetails.innerHTML = accountInfo;
   }
 }
 
@@ -287,14 +321,17 @@ async function displayTransactionSummary() {
 }
 
 // Function to show the selected view and hide others
-async function showView(viewId) {
+function showView(viewId) {
   const views = document.querySelectorAll('.view');
   views.forEach(view => view.style.display = 'none');
   document.getElementById(viewId).style.display = 'block';
-
+  
   if (viewId === 'assetsOverviewView') {
-    await displayAssets();
-    createAssetsOverviewChart();
+    displayAssets();
+  }
+
+  if (viewId === 'cashAccountView') {
+    displayCashAccount();
   }
 
   if (viewId === 'transactionsView') {
@@ -305,7 +342,6 @@ async function showView(viewId) {
     displayStocks();
   }
 }
-
 // Initialize by showing the assets overview view
 document.addEventListener('DOMContentLoaded', () => {
   showView('assetsOverviewView');
