@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
 from decimal import Decimal
+import yfinance as yf
 
 app = Flask(__name__)
 
@@ -21,7 +22,6 @@ def home():
 class Stocks(db.Model):
     ticker_symbol = db.Column(db.String(10), primary_key=True)
     company_name = db.Column(db.String(100), nullable=False)
-    current_price = db.Column(db.Numeric(10, 2), nullable=False)
     price_timestamp = db.Column(db.DateTime, nullable=False)
     opening_price = db.Column(db.Numeric(10, 2), nullable=False)
     closing_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -89,7 +89,6 @@ def get_stocks():
     return jsonify([{
         'ticker_symbol': stock.ticker_symbol,
         'company_name': stock.company_name,
-        'current_price': str(stock.current_price),
         'price_timestamp': stock.price_timestamp.isoformat(),
         'opening_price': str(stock.opening_price),
         'closing_price': str(stock.closing_price)
@@ -152,11 +151,11 @@ def update_assets(ticker_symbol, quantity, transaction_price, transaction_type, 
         if asset:
             if transaction_type == 'buy': 
                 asset.total_quantity += quantity
-                asset.total_cost = asset.total_cost + (transaction_price * quantity)
+                asset.total_cost = asset.total_cost + (Decimal(transaction_price) * quantity)
             elif transaction_type == 'sell':
                 if asset.total_quantity >= quantity:    
                     asset.total_quantity -= quantity
-                    asset.total_cost = asset.total_cost - (transaction_price * quantity)
+                    asset.total_cost = asset.total_cost - (Decimal(transaction_price) * quantity)
                     if asset.total_quantity == 0:
                         db.session.delete(asset)
             else: 
@@ -210,7 +209,10 @@ def buy_stock():
     if not stock:
         return jsonify({'message': 'Stock not found'}), 404
     
-    purchase_price = stock.current_price
+    stock_info = yf.Ticker(ticker_symbol)
+
+    
+    purchase_price = stock_info.info.get('currentPrice')
     purchase_cost = quantity * purchase_price
     
     cash_account = CashAccount.query.first()
@@ -244,7 +246,9 @@ def sell_stock():
     if not stock:
         return jsonify({'message': 'Stock not found'}), 404
     
-    sell_price = stock.current_price
+    stock_info = yf.Ticker(ticker_symbol)
+    
+    sell_price = stock_info.info.get('currentPrice')
     sale_revenue = quantity * sell_price
     
     asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
@@ -304,7 +308,50 @@ def withdraw():
     message = cash_account.withdraw(amount)
     return jsonify({'message': message, 'balance': str(cash_account.balance)})
 
+@app.route('/current_prices', methods=['GET'])
+def get_current_prices():
+    sp500_tickers = [
+    "A", "AAL", "AAP", "AAPL", "ABBV", "ABT", "ACN", "ADBE", "ADI", "ADM", "ADP", "ADSK", "AEE", "AEP", "AES", "AFL", 
+    "AIG", "AIZ", "AJG", "AKAM", "ALB", "ALGN", "ALK", "ALL", "ALLE", "AMAT", "AMCR", "AMD", "AME", "AMGN", "AMP", 
+    "AMT", "AMZN", "ANET", "ANSS", "AON", "AOS", "APA", "APD", "APH", "APTV", "ARE", "ATO", "AVB", "AVGO", "AVY", 
+    "AWK", "AXP", "AZO", "BA", "BAC", "BAX", "BBWI", "BBY", "BDX", "BEN", "BIIB", "BIO", "BK", "BKNG", "BKR", "BLK", 
+    "BMY", "BR", "BRO", "BSX", "BWA", "BX", "C", "CAG", "CAH", "CARR", "CAT", "CB", "CBOE", "CBRE", "CCI", "CCL",
+    "CDNS", "CDW", "CE", "CEG", "CF", "CFG", "CHD", "CHRW", "CHTR", "CI", "CINF", "CL", "CLX", "CMA", 
+    "CMCSA", "CME", "CMG", "CMI", "CMS", "CNC", "CNP", "COF", "COO", "COP", "COST", "CPB", "CPRT", "CPT", "CRL", 
+    "CRM", "CSCO", "CSX", "CTAS", "CTLT", "CTRA", "CTSH", "CTVA", "CVS", "CVX", "D", "DAL", "DD", "DE", "DELL", 
+    "DFS", "DG", "DGX", "DHI", "DHR", "DIS", "DLR", "DLTR", "DOV", "DOW", "DPZ", "DRI", "DTE", "DUK", "DVA", "DVN", 
+    "DXC", "DXCM", "EA", "EBAY", "ECL", "ED", "EFX", "EIX", "EL", "EMN", "EMR", "ENPH", "EOG", "EPAM", "EQIX", 
+    "EQR", "ES", "ESS", "ETN", "ETR", "EVRG", "EW", "EXC", "EXPD", "EXPE", "EXR", "F", "FANG", "FAST", "FCX", "FDS", 
+    "FDX", "FE", "FFIV", "FIS", "FITB", "FLR", "FLS", "FMC", "FOX", "FOXA", "FRT", "FTI", "FTNT", "FTV", "GD", "GE", 
+    "GILD", "GIS", "GL", "GLW", "GM", "GNRC", "GOOG", "GOOGL", "GPC", "GPN", "GPS", "GRMN", "GS", "GWW", "HAL", 
+    "HAS", "HBAN", "HBI", "HCA", "HCI", "HIG", "HII", "HLT", "HOLX", "HON", "HPE", "HPQ", "HRL", "HSIC", "HST", 
+    "HSY", "HUM", "HWM", "IBM", "ICE", "IDXX", "IEX", "IFF", "ILMN", "INCY", "INTC", "INTU", "IP", "IPG", "IPGP", 
+    "IQV", "IR", "IRM", "ISRG", "IT", "ITW", "IVZ", "J", "JBHT", "JCI", "JKHY", "JNJ", "JNPR", "JPM", "K", "KEY", 
+    "KEYS", "KHC", "KIM", "KLAC", "KMB", "KMI", "KMX", "KO", "KR", "KSS", "L", "LDOS", "LEG", "LEN", "LH", "LHX", 
+    "LIN", "LKQ", "LLY", "LMT", "LNC", "LNT", "LOW", "LRCX", "LUMN", "LUV", "LYB", "MA", "MAA", "MAR", "MAS", 
+    "MCD", "MCHP", "MCK", "MCO", "MDT", "MET", "META", "MGM", "MHK", "MKC", "MKTX", "MLM", "MMC", "MMM", "MNST", 
+    "MO", "MOS", "MPC", "MPWR", "MRK", "MRO", "MS", "MSCI", "MSFT", "MSI", "MTB", "MTD", "MU", "NCLH", "NDAQ", 
+    "NDSN", "NEE", "NEM", "NFLX", "NI", "NKE", "NOC", "NOV", "NRG", "NSC", "NTAP", "NTRS", "NUE", "NVDA", "NVR", 
+    "NWL", "NWS", "NWSA", "O", "ODFL", "OKE", "OMC", "ORCL", "ORLY", "OTIS", "OXY", "PAYC", "PAYX", "PCAR", "PEG", 
+    "PEP", "PFE", "PFG", "PG", "PGR", "PH", "PHM", "PKG", "PLD", "PLTR", "PM", "PNC", "PNR", "PNW", "POOL", "PPG", 
+    "PPL", "PRGO", "PRU", "PSA", "PSX", "PTC", "PVH", "PWR", "PYPL", "QCOM", "QRVO", "RCL", "REG", "REGN", "RF", 
+    "RHI", "RJF", "RL", "RMD", "ROK", "ROL", "ROP", "ROST", "RSG", "RTX", "SBAC", "SBUX", "SCHW", "SEE", "SHW", 
+    "SJM", "SLB", "SNA", "SNPS", "SO", "SPG", "SPGI", "SRE", "STE", "STT", "STX", "STZ", "SWK", "SWKS", "SYF", 
+    "SYK", "SYY", "T", "TAP", "TDG", "TDY", "TECH", "TEL", "TER", "TFC", "TFX", "TGNA", "TGT", "TJX", "TMO", "TMUS", 
+    "TPR", "TRMB", "TROW", "TRV", "TSCO", "TSLA", "TSN", "TT", "TTWO", "TXN", "TXT", "TYL", "UA", "UAL", "UDR", 
+    "UHS", "ULTA", "UNH", "UNM", "UNP", "UPS", "URI", "USB", "V", "VFC", "VLO", "VMC", "VNO", "VRSK", "VRSN", 
+    "VRTX", "VTR", "VTRS", "VZ", "WAB", "WAT", "WBA", "WDC", "WEC", "WELL", "WFC", "WHR", "WM", "WMB", "WMT", 
+    "WRB", "WST", "WY", "WYNN", "XEL", "XOM", "XRAY", "XYL", "YUM", "ZBH", "ZBRA", "ZION", "ZTS"
+]
 
+    prices = []
+    for ticker in sp500_tickers:
+        stock = yf.Ticker(ticker)
+        current_price = stock.info.get('currentPrice')
+        if current_price:
+            prices.append({'ticker_symbol': ticker, 'current_price': current_price})
+    
+    return jsonify(prices)
 
 if __name__ == '__main__':
     app.run(debug=True)
