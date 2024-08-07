@@ -1,3 +1,5 @@
+let allStocksData = [];
+
 // Function to fetch asset data from the API
 async function fetchUserAssetData() {
   try {
@@ -84,44 +86,65 @@ async function displayAssets() {
 // Function to display stocks
 async function displayStocks() {
   const accountDetails = document.getElementById('accountDetails');
+  const stockSearchInput = document.getElementById('stockSearchInput');
+
+  // Fetch the stock data from the API and store it
+  allStocksData = await fetchStockData();
+
+  // Render all stocks initially
+  renderStocks(allStocksData);
+
+  // Add event listener for the search input
+  stockSearchInput.addEventListener('input', () => {
+    const searchInput = stockSearchInput.value.toLowerCase();
+    const filteredStocks = allStocksData.filter(stock =>
+      stock.company_name.toLowerCase().includes(searchInput) || 
+      stock.ticker_symbol.toLowerCase().includes(searchInput)
+      );
+      renderStocks(filteredStocks);
+  });
+} // end of 87: displayStocks
+
+// Function to render stocks
+function renderStocks(stocks){
+  const accountDetails = document.getElementById('accountDetails');
   accountDetails.innerHTML = '';
-  const stocksData = await fetchStockData();
 
-  if (stocksData) {
-    stocksData.forEach(stock => {
-      const stockElement = document.createElement('div');
-      stockElement.classList.add('stock');
-      const infoElement = document.createElement('div');
-      infoElement.classList.add('info');
-      infoElement.innerHTML = `
-        <strong>${stock.company_name} (${stock.ticker_symbol})</strong><br>
-        Opening Price: $${stock.opening_price}<br>
-        Closing Price: $${stock.closing_price}<br>
-        Current Price: $${stock.current_price}<br>
-        Price Timestamp: ${stock.price_timestamp}
-      `;
-      // Create a share number selector
-      const shareSelector = document.createElement('input');
-      shareSelector.type = 'number';
-      shareSelector.min = 1;
-      shareSelector.value = 1;
-      shareSelector.classList.add('share-selector');
+  stocks.forEach(stocks => {
+    const stockElement = document.createElement('div');
+    stockElement.classList.add('stock');
+    const infoElement = document.createElement('div');
+    infoElement.classList.add('info');
+    infoElement.innerHTML = `
+      <strong>${stock.company_name} (${stock.ticker_symbol})</strong><br>
+      Opening Price: $${stock.opening_price}<br>
+      Closing Price: $${stock.closing_price}<br>
+      Current Price: $${stock.current_price}<br>
+      Price Timestamp: ${stock.price_timestamp}
+    `;
 
-      // Create a buy button
-      const buyButton = document.createElement('button');
-      buyButton.textContent = 'Buy';
-      buyButton.addEventListener('click', () => {
-        const numberOfShares = shareSelector.value;
-        buyStock(stock, numberOfShares); // Call the buyStock function with the stock data and number of shares
-      });
+    // Create a share number selector
+    const shareSelector = document.createElement('input');
+    shareSelector.type = 'number';
+    shareSelector.min = 1;
+    shareSelector.value = 1;
+    shareSelector.classList.add('share-selector');
 
-      stockElement.appendChild(infoElement);
-      stockElement.appendChild(shareSelector);
-      stockElement.appendChild(buyButton);
-      accountDetails.appendChild(stockElement);
+    // Create a buy button
+    const buyButton = document.createElement('button');
+    buyButton.textContent = 'Buy';
+    buyButton.addEventListener('click', () => {
+      const numberOfShares = shareSelector.value;
+      buyStock(stock, numberOfShares); // Call the buyStock function with the stock data and number of shares
     });
-  }
+
+    stockElement.appendChild(infoElement);
+    stockElement.appendChild(shareSelector);
+    stockElement.appendChild(buyButton);
+    accountDetails.appendChild(stockElement);
+  });
 }
+
 
 // Function to buy stock
 async function buyStock(stock, numberOfShares) {
