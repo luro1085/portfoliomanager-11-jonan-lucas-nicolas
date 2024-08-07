@@ -213,11 +213,18 @@ async function displayTransactionSummary() {
 
     transactionsData.forEach(transaction => {
       const transactionItem = document.createElement('li');
-      transactionItem.innerHTML = `
-        <span>${transaction.transaction_type.toUpperCase()}</span>
-        ${transaction.ticker_symbol} - ${transaction.quantity} shares @ $${transaction.purchase_price_per_share || transaction.sell_price_per_share} each
-        on ${new Date(transaction.transaction_datetime).toLocaleString()}
-      `;
+      if (transaction.transaction_type === 'sell') {
+        transactionItem.innerHTML = `
+          <span>${transaction.transaction_type.toUpperCase()}</span>
+          ${transaction.ticker_symbol} - ${transaction.quantity} shares on ${new Date(transaction.transaction_datetime).toLocaleString()}
+        `;
+      } else {
+        transactionItem.innerHTML = `
+          <span>${transaction.transaction_type.toUpperCase()}</span>
+          ${transaction.ticker_symbol} - ${transaction.quantity} shares @ $${transaction.purchase_price_per_share || transaction.sell_price_per_share} each
+          on ${new Date(transaction.transaction_datetime).toLocaleString()}
+        `;
+      }
       recentTransactions.appendChild(transactionItem);
 
       if (transaction.transaction_type === 'buy') {
