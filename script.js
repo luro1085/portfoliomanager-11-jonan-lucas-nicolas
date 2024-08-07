@@ -55,14 +55,22 @@ async function fetchCashAccountData() {
   }
 }
 
+let assetsOverviewChart = null; // Global variable to hold the chart instance
+
 // Function to create a chart of assets overview
 async function createAssetsOverviewChart(){
-  const canvas = document.getElementById('assetsOverviewChart');
-  if(!canvas) {
+  const ctx = document.getElementById('assetsOverviewChart').getContext('2d');
+
+  if (!ctx) {
     console.error('Canvas element with ID "assetsOverviewChart" not found.');
     return;
   }
-  const ctx = document.getElementById('assetsOverviewChart').getContext('2d');
+
+  // Destroy the previous chart instance if it exists
+  if(assetsOverviewChart){
+    assetsOverviewChart.destroy();
+  }
+
   const assetsData = await fetchUserAssetData();
 
   if(!assetsData) return;
@@ -72,7 +80,7 @@ async function createAssetsOverviewChart(){
   const data = assetsData.map(asset => asset.total_quantity);
 
   // Create the chart
-  new Chart(ctx, {
+  assetsOverviewChart = new Chart(ctx, {
     type: 'bar', // You can change to 'pie', 'doughnut', etc.
     data: {
       labels: labels,
