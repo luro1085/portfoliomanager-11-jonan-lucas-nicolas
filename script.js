@@ -47,6 +47,9 @@ async function displayAssets() {
   const assetsData = await fetchUserAssetData();
 
   if (assetsData) {
+    // Sort assets alphabetically by ticker symbol
+    assetsData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
+
     assetsData.forEach(asset => {
       const assetElement = document.createElement('div');
       assetElement.classList.add('asset');
@@ -69,8 +72,14 @@ async function displayAssets() {
       const sellButton = document.createElement('button');
       sellButton.textContent = 'Sell';
       sellButton.addEventListener('click', () => {
-        const numberOfShares = sellShareSelector.value;
-        sellStock(asset, numberOfShares); // Call the sellStock function with the asset data and number of shares
+        const numberOfShares = parseFloat(sellShareSelector.value);
+        if (numberOfShares < 1 || !Number.isInteger(numberOfShares)) {
+          alert("The operation could not be completed. Please enter a valid number of shares (positive integer).");
+        } else if (numberOfShares > asset.total_quantity) {
+          alert("You can't perform this sale. You are trying to sell more shares than you own.");
+        } else {
+          sellStock(asset, numberOfShares); // Call the sellStock function with the asset data and number of shares
+        }
       });
 
       assetElement.appendChild(infoElement);
@@ -88,6 +97,9 @@ async function displayStocks() {
   const stocksData = await fetchStockData();
 
   if (stocksData) {
+    // Sort stocks alphabetically by ticker symbol
+    stocksData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
+
     stocksData.forEach(stock => {
       const stockElement = document.createElement('div');
       stockElement.classList.add('stock');
@@ -111,8 +123,12 @@ async function displayStocks() {
       const buyButton = document.createElement('button');
       buyButton.textContent = 'Buy';
       buyButton.addEventListener('click', () => {
-        const numberOfShares = shareSelector.value;
-        buyStock(stock, numberOfShares); // Call the buyStock function with the stock data and number of shares
+        const numberOfShares = parseFloat(shareSelector.value);
+        if (numberOfShares < 1 || !Number.isInteger(numberOfShares)) {
+          alert("The operation could not be completed. Please enter a valid number of shares (positive integer).");
+        } else {
+          buyStock(stock, numberOfShares); // Call the buyStock function with the stock data and number of shares
+        }
       });
 
       stockElement.appendChild(infoElement);
@@ -127,7 +143,7 @@ async function displayStocks() {
 async function buyStock(stock, numberOfShares) {
   const newTransaction = {
     ticker_symbol: stock.ticker_symbol,
-    quantity: parseInt(numberOfShares) // Ensure the quantity is an integer
+    quantity: numberOfShares // Use the validated quantity
   };
 
   try {
@@ -155,7 +171,7 @@ async function buyStock(stock, numberOfShares) {
 async function sellStock(asset, numberOfShares) {
   const newTransaction = {
     ticker_symbol: asset.ticker_symbol,
-    quantity: parseInt(numberOfShares) // Ensure the quantity is an integer
+    quantity: numberOfShares // Use the validated quantity
   };
 
   try {
