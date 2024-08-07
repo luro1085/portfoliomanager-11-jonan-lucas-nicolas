@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
+from decimal import Decimal
 
 app = Flask(__name__)
 
@@ -24,30 +25,59 @@ class Stocks(db.Model):
     price_timestamp = db.Column(db.DateTime, nullable=False)
     opening_price = db.Column(db.Numeric(10, 2), nullable=False)
     closing_price = db.Column(db.Numeric(10, 2), nullable=False)
-    
+
     
 class Transactions(db.Model):
     transaction_id = db.Column(db.Integer, primary_key=True)
     transaction_type = db.Column(db.String(50), nullable=False)
     ticker_symbol = db.Column(db.String(10), db.ForeignKey('stocks.ticker_symbol'))
-    company_name = db.Column(db.String(50), nullable=False)
+    company_name = db.Column(db.String(50), nullable=True)
     purchase_cost = db.Column(db.Numeric(10, 2), nullable=True)
     sale_revenue = db.Column(db.Numeric(10, 2), nullable=True)
     quantity = db.Column(db.Integer, nullable=True)
     purchase_price_per_share = db.Column(db.Numeric(10, 2), nullable=True) # per share
     sell_price_per_share = db.Column(db.Numeric(10, 2), nullable=True) # per share
     transaction_datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    cash_amount = db.Column(db.Numeric(12, 2), nullable=True)
     #portfolio_value_before = db.Column(db.Numeric(10, 2), nullable=False)
     #portfolio_value_after = db.Column(db.Numeric(10, 2), nullable=True)
     
+class CashAccount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    balance = db.Column(db.Numeric(12, 2), default=0, nullable=False)
+    
+    def deposit(self, amount):
+        if amount <= 0:
+            return "Deposit amount must be greater than zero!"
+        
+        self.balance += Decimal(amount)
+        transaction = Transactions(transaction_type='deposit', cash_amount=amount)
+        db.session.add(transaction)
+        db.session.commit()
+        update_assets(None, None, None, 'deposit', amount)
+        return f"Deposit of ${amount} successful. New balance: ${self.balance}"
+    
+    def withdraw(self, amount):
+        if amount <= 0:
+            return "Withdrawal amount must be greater than zero!"
+        if amount > self.balance:
+            return "Insufficient funds!"
+        
+        self.balance -= Decimal(amount)
+        transaction = Transactions(transaction_type='withdrawal', cash_amount=amount)
+        db.session.add(transaction)
+        db.session.commit()
+        update_assets(None, None, None, 'withdrawal', amount)
+        return f"Withdrawal of ${amount} successful. New balance: ${self.balance}"
 
 class Assets(db.Model):
     asset_id = db.Column(db.Integer, primary_key=True)
     asset_type = db.Column(db.String(50), nullable=False)
     ticker_symbol = db.Column(db.String(10), db.ForeignKey('stocks.ticker_symbol'))
-    company_name = db.Column(db.String(50), nullable=False)
-    total_quantity = db.Column(db.Integer, nullable=False)
-    total_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    company_name = db.Column(db.String(50), nullable=True)
+    total_quantity = db.Column(db.Integer, nullable=True)
+    total_cost = db.Column(db.Numeric(10, 2), nullable=True)
+    cash_balance = db.Column(db.Numeric(10, 2), nullable=True)
     #current_total_market_value = db.Column(db.Numeric(10, 2), nullable=False)
     #total_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False) 
     #percentage_value_change_from_cost = db.Column(db.Numeric(10, 2), nullable=False)
@@ -79,9 +109,21 @@ def get_transactions():
         'purchase_price_per_share': str(transaction.purchase_price_per_share),
         'sell_price_per_share': str(transaction.sell_price_per_share),
         'transaction_datetime': transaction.transaction_datetime.isoformat(),
+        'cash_amount': str(transaction.cash_amount)
         #'portfolio_value_before': str(transaction.portfolio_value_before),
         #'portfolio_value_after': str(transaction.portfolio_value_after)
     } for transaction in transactions])
+    
+@app.route('/cash_account', methods=['GET'])
+def get_cash_account():
+    cash_account = CashAccount.query.first()
+    if not cash_account:
+        return jsonify({'message': 'Cash account not found.'}), 404
+    
+    return jsonify({
+        'cash_account_id': cash_account.id,
+        'balance': str(cash_account.balance),
+    })
     
 @app.route('/assets', methods=['GET'])
 def get_assets():
@@ -96,50 +138,61 @@ def get_assets():
         #'current_total_market_value': str(asset.current_total_market_value),
         #'total_value_change_from_cost': str(asset.total_value_change_from_cost),
         #'percentage_value_change_from_cost': str(asset.percentage_value_change_from_cost),
-        'last_updated_timestamp': asset.last_updated_timestamp.isoformat()
+        'last_updated_timestamp': asset.last_updated_timestamp.isoformat(),
+        'cash_balance': asset.cash_balance
+        
     } for asset in assets])
 
 
     
-def update_assets(ticker_symbol, quantity, transaction_price, transaction_type):
-    asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
-    
-    if asset:
-        if transaction_type == 'buy': 
-            asset.total_quantity += quantity
-            asset.total_cost =  asset.total_cost + (transaction_price * quantity)
-        elif transaction_type == 'sell':
-            if asset.total_quantity >= quantity:    
-                asset.total_quantity -= quantity
-                asset.total_cost = asset.total_cost - (transaction_price * quantity)
-                if asset.total_quantity == 0:
-                    db.session.delete(asset)
-        else: 
-            return False
+def update_assets(ticker_symbol, quantity, transaction_price, transaction_type, cash_amount=None):
+    if ticker_symbol:
+        asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
         
-        #asset.current_total_market_value = asset.total_quantity * transaction_price
-        #asset.total_value_change_from_cost = asset.current_total_market_value - asset.total_cost
-        #asset.percentage_value_change_from_cost = (asset.total_value_change_from_cost / asset.current_total_market_value) * 100
-        
-    else:
-        if transaction_type == 'buy':
-            new_asset = Assets(
-                asset_type='stock',
-                ticker_symbol=ticker_symbol,
-                company_name=Stocks.query.filter_by(ticker_symbol=ticker_symbol).first().company_name,
-                total_quantity=quantity,
-                total_cost = quantity * transaction_price,
-                #current_total_market_value = quantity * transaction_price,
-                #total_value_change_from_cost = 0,
-                #percentage_value_change_from_cost = 0
-            )
-            db.session.add(new_asset)
-            
+        if asset:
+            if transaction_type == 'buy': 
+                asset.total_quantity += quantity
+                asset.total_cost = asset.total_cost + (transaction_price * quantity)
+            elif transaction_type == 'sell':
+                if asset.total_quantity >= quantity:    
+                    asset.total_quantity -= quantity
+                    asset.total_cost = asset.total_cost - (transaction_price * quantity)
+                    if asset.total_quantity == 0:
+                        db.session.delete(asset)
+            else: 
+                return False
         else:
-            return False
-        
+            if transaction_type == 'buy':
+                new_asset = Assets(
+                    asset_type='stock',
+                    ticker_symbol=ticker_symbol,
+                    company_name=Stocks.query.filter_by(ticker_symbol=ticker_symbol).first().company_name,
+                    total_quantity=quantity,
+                    total_cost=quantity * transaction_price
+                )
+                db.session.add(new_asset)
+            else:
+                return False
+    else:
+        asset = Assets.query.filter_by(asset_type='cash').first()
+        if transaction_type == 'deposit':
+            if asset:
+                asset.cash_balance = (asset.cash_balance or Decimal(0)) + Decimal(cash_amount)
+            else:
+                new_asset = Assets(
+                    asset_type='cash',
+                    cash_balance=Decimal(cash_amount),
+                )
+                db.session.add(new_asset)
+        elif transaction_type == 'withdrawal':
+            if asset and asset.cash_balance >= Decimal(cash_amount):
+                asset.cash_balance -= Decimal(cash_amount)
+            else:
+                return False
+
     db.session.commit()
     return True
+
     
     
 def get_portfolio_value():
@@ -159,8 +212,11 @@ def buy_stock():
     
     purchase_price = stock.current_price
     purchase_cost = quantity * purchase_price
-    #portfolio_value_before = get_portfolio_value()
     
+    cash_account = CashAccount.query.first()
+    if not cash_account or cash_account.balance < purchase_cost:
+        return jsonify({'message': 'Insufficient funds to buy the stock'}), 400
+
     transaction = Transactions(
         transaction_type = 'buy',
         ticker_symbol = ticker_symbol,
@@ -168,14 +224,13 @@ def buy_stock():
         purchase_cost = purchase_cost,
         quantity = quantity,
         purchase_price_per_share = purchase_price,
-        #portfolio_value_before = portfolio_value_before,
-        #portfolio_value_after = portfolio_value_before + purchase_cost
     )
     
     db.session.add(transaction)
     db.session.commit()
     
     update_assets(ticker_symbol, quantity, purchase_price, 'buy')
+    cash_account.withdraw(purchase_cost)
     
     return jsonify({'message': 'Stock bought successfully', 'purchase_price': str(purchase_price)})
 
@@ -191,26 +246,65 @@ def sell_stock():
     
     sell_price = stock.current_price
     sale_revenue = quantity * sell_price
-    #portfolio_value_before = get_portfolio_value()
+    
+    asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
+    if not asset or asset.total_quantity < quantity:
+        return jsonify({'message': 'Insufficient quantity to sell'}), 400
+    
+    update_assets(ticker_symbol, quantity, sell_price, 'sell')
+    
+    cash_account = CashAccount.query.first()
+    if not cash_account:
+        cash_account = CashAccount(balance=0)
+        db.session.add(cash_account)
+        db.session.commit()
+    
+    cash_account.deposit(sale_revenue)
+    db.session.commit()
     
     transaction = Transactions(
-        transaction_type = 'sell',
-        ticker_symbol = ticker_symbol,
-        company_name = stock.company_name,
-        sale_revenue = sale_revenue,
-        quantity = quantity,
-        sell_price_per_share = sell_price,
-        #portfolio_value_before = portfolio_value_before,
-        #portfolio_value_after = portfolio_value_before - sale_revenue
+        transaction_type='sell',
+        ticker_symbol=ticker_symbol,
+        company_name=stock.company_name,
+        sale_revenue=sale_revenue,
+        quantity=quantity,
+        sell_price_per_share=sell_price,
+        transaction_datetime=datetime.utcnow()
     )
     
     db.session.add(transaction)
     db.session.commit()
     
-    if not update_assets(ticker_symbol, quantity, sell_price, 'sell'):
-        return jsonify({'message': 'Insufficient quantity to sell'}), 400
+    return jsonify({'message': 'Stock sold successfully', 'sell_price': str(sell_price), 'new_balance': str(cash_account.balance)})
+
+@app.route('/deposit', methods=['POST'])
+def deposit():
+    data = request.json
+    amount = float(data.get('amount'))
     
-    return jsonify({'message': 'Stock sold successfully', 'sell_price': str(sell_price)})
+    cash_account = CashAccount.query.first()
+    if not cash_account:
+        cash_account = CashAccount(balance=0)
+        db.session.add(cash_account)
+        db.session.commit()
+    
+    message = cash_account.deposit(amount)
+    return jsonify({'message': message, 'balance': str(cash_account.balance)})
+
+
+@app.route('/withdraw', methods=['POST'])
+def withdraw():
+    data = request.json
+    amount = float(data.get('amount'))
+    
+    cash_account = CashAccount.query.first()
+    if not cash_account:
+        return jsonify({'error': 'Cash account not found.'}), 404
+    
+    message = cash_account.withdraw(amount)
+    return jsonify({'message': message, 'balance': str(cash_account.balance)})
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
