@@ -1,7 +1,7 @@
 // Function to fetch asset data from the API
 async function fetchUserAssetData() {
   try {
-    const response = await fetch('http://127.0.0.1:5000/assets'); 
+    const response = await fetch('http://127.0.0.1:5000/assets');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
@@ -40,7 +40,48 @@ async function fetchTransactionData() {
   }
 }
 
-// Function to display assets
+// Function to create a chart of assets overview
+async function createAssetsOverviewChart(){
+  const canvas = document.getElementById('assetsOverviewChart');
+  if(!canvas) {
+    console.error('Canvas element with ID "assetsOverviewChart" not found.');
+    return;
+  }
+  const ctx = document.getElementById('assetsOverviewChart').getContext('2d');
+  const assetsData = await fetchUserAssetData();
+
+  if(!assetsData) return;
+
+  // Prepare data for the chart
+  const labels = assetsData.map(asset => asset.ticker_symbol);
+  const data = assetsData.map(asset => asset.total_quantity);
+
+  // Create the chart
+  new Chart(ctx, {
+    type: 'bar', // You can change to 'pie', 'doughnut', etc.
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Asset Quantity',
+        data: data,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    },
+
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+
+  });
+}
+
+// Function to display assets along with the chart
 async function displayAssets() {
   const assetsDetails = document.getElementById('assetsDetails');
   assetsDetails.innerHTML = '';
@@ -87,6 +128,9 @@ async function displayAssets() {
       assetElement.appendChild(sellButton);
       assetsDetails.appendChild(assetElement);
     });
+
+    // Create the chart after displaying the assets
+    createAssetsOverviewChart();
   }
 }
 
@@ -243,13 +287,14 @@ async function displayTransactionSummary() {
 }
 
 // Function to show the selected view and hide others
-function showView(viewId) {
+async function showView(viewId) {
   const views = document.querySelectorAll('.view');
   views.forEach(view => view.style.display = 'none');
   document.getElementById(viewId).style.display = 'block';
-  
+
   if (viewId === 'assetsOverviewView') {
-    displayAssets();
+    await displayAssets();
+    createAssetsOverviewChart();
   }
 
   if (viewId === 'transactionsView') {
