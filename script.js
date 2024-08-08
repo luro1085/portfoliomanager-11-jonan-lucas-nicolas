@@ -55,22 +55,15 @@ async function fetchCashAccountData() {
   }
 }
 
-let assetsOverviewChart = null; // Global variable to hold the chart instance
-
 // Function to create a chart of assets overview
+let assetsOverviewChart = null;
 async function createAssetsOverviewChart(){
-  const ctx = document.getElementById('assetsOverviewChart').getContext('2d');
-
-  if (!ctx) {
+  const canvas = document.getElementById('assetsOverviewChart');
+  if(!canvas) {
     console.error('Canvas element with ID "assetsOverviewChart" not found.');
     return;
   }
-
-  // Destroy the previous chart instance if it exists
-  if(assetsOverviewChart){
-    assetsOverviewChart.destroy();
-  }
-
+  const ctx = document.getElementById('assetsOverviewChart').getContext('2d');
   const assetsData = await fetchUserAssetData();
 
   if(!assetsData) return;
@@ -80,7 +73,7 @@ async function createAssetsOverviewChart(){
   const data = assetsData.map(asset => asset.total_quantity);
 
   // Create the chart
-  assetsOverviewChart = new Chart(ctx, {
+  new Chart(ctx, {
     type: 'bar', // You can change to 'pie', 'doughnut', etc.
     data: {
       labels: labels,
@@ -170,9 +163,72 @@ async function displayCashAccount() {
   if (cashAccountData) {
     const accountInfo = `
       <p>Cash Balance: $${cashAccountData.balance}</p>
-      <p>Last Updated: ${new Date(cashAccountData.last_updated_timestamp).toLocaleString()}</p>
     `;
     cashAccountDetails.innerHTML = accountInfo;
+  }
+}
+
+// Function to deposit cash
+async function deposit() {
+  const amount = parseFloat(document.getElementById('cashAmount').value);
+  if (amount <= 0 || isNaN(amount)) {
+    alert("Please enter a valid amount to deposit.");
+    return;
+  }
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/deposit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ amount: amount })
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert(result.message);
+      displayCashAccount(); // Refresh cash account details
+    } else {
+      alert(`Error: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+// Function to withdraw cash
+async function withdraw() {
+  const amount = parseFloat(document.getElementById('cashAmount').value);
+  if (amount <= 0 || isNaN(amount)) {
+    alert("Please enter a valid amount to withdraw.");
+    return;
+  }
+
+  const cashAccountData = await fetchCashAccountData();
+  if (amount > parseFloat(cashAccountData.balance)) {
+    alert("Insufficient funds for this withdrawal.");
+    return;
+  }
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/withdraw', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ amount: amount })
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert(result.message);
+      displayCashAccount(); // Refresh cash account details
+    } else {
+      alert(`Error: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error:', error);
   }
 }
 
