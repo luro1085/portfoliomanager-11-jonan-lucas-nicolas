@@ -41,20 +41,24 @@
         <button onclick="deposit()">Deposit</button>
         <button onclick="withdraw()">Withdraw</button>
       </div>
+      <div class="transaction-summary">
+        <h3>Recent Cash Transactions</h3>
+        <ul id="cashTransactions"></ul>
+      </div>
     </div>
     
     <!-- Transactions View -->
     <div id="transactionsView" class="view" style="display:none;">
       <h2>Transactions</h2>
-      <div class="transaction-summary">
-        <h3>Recent Transactions</h3>
-        <ul id="recentTransactions"></ul>
-      </div>
       <div class="transaction-overview">
         <h3>Transaction Summary (Last 30 Days)</h3>
         <p>Total Buys: <span id="totalBuys"></span></p>
         <p>Total Sells: <span id="totalSells"></span></p>
         <p>Total Amount Traded: $<span id="totalAmount"></span></p>
+      </div>
+      <div class="transaction-summary">
+        <h3>Recent Transactions</h3>
+        <ul id="recentTransactions"></ul>
       </div>
     </div>
     

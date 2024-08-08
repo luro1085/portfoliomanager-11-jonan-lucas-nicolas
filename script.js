@@ -166,6 +166,35 @@ async function displayCashAccount() {
     `;
     cashAccountDetails.innerHTML = accountInfo;
   }
+
+  // Fetch and display recent cash transactions
+  const recentCashTransactions = document.getElementById('cashTransactions');
+  recentCashTransactions.innerHTML = '';
+  const transactionsData = await fetchTransactionData();
+
+  // Filter to only include deposit and withdraw transactions
+  const filteredTransactions = transactionsData.filter(a => a.transaction_type === "deposit" || a.transaction_type === "withdrawal");
+
+  // Sort transactions by datetime in descending order
+  filteredTransactions.sort((a, b) => new Date(b.transaction_datetime) - new Date(a.transaction_datetime));
+
+  if (transactionsData) {
+    filteredTransactions.forEach(transaction => {
+      const transactionItem = document.createElement('li');
+      if (transaction.transaction_type === 'withdrawal') {
+        transactionItem.innerHTML = `
+          <span style="font-weight: bold;">WITHDRAW</span>
+          –$${transaction.cash_amount} on ${new Date(transaction.transaction_datetime).toLocaleString()}
+        `;
+      } else if (transaction.transaction_type === 'deposit') {
+        transactionItem.innerHTML = `
+          <span style="font-weight: bold;">DEPOSIT</span>
+          +$${transaction.cash_amount} on ${new Date(transaction.transaction_datetime).toLocaleString()}
+        `;
+      }
+      recentCashTransactions.appendChild(transactionItem);
+    });
+  }
 }
 
 // Function to deposit cash
@@ -338,6 +367,7 @@ async function sellStock(asset, numberOfShares) {
 }
 
 // Function to display transaction summary in transactions view
+// Function to display transaction summary in transactions view
 async function displayTransactionSummary() {
   const recentTransactions = document.getElementById('recentTransactions');
   const totalBuysElement = document.getElementById('totalBuys');
@@ -350,20 +380,23 @@ async function displayTransactionSummary() {
   const transactionsData = await fetchTransactionData();
 
   if (transactionsData) {
-    // Sort transactions by datetime in descending order
-    transactionsData.sort((a, b) => new Date(b.transaction_datetime) - new Date(a.transaction_datetime));
+    // Filter to only include buy and sell transactions
+    const filteredTransactions = transactionsData.filter(a => a.transaction_type === "sell" || a.transaction_type === "buy");
 
-    transactionsData.forEach(transaction => {
+    // Sort transactions by datetime in descending order
+    filteredTransactions.sort((a, b) => new Date(b.transaction_datetime) - new Date(a.transaction_datetime));
+
+    filteredTransactions.forEach(transaction => {
       const transactionItem = document.createElement('li');
       if (transaction.transaction_type === 'sell') {
         transactionItem.innerHTML = `
           <span>${transaction.transaction_type.toUpperCase()}</span>
-          ${transaction.ticker_symbol} - ${transaction.quantity} shares on ${new Date(transaction.transaction_datetime).toLocaleString()}
+          ${transaction.ticker_symbol} – ${transaction.quantity} shares on ${new Date(transaction.transaction_datetime).toLocaleString()}
         `;
       } else {
         transactionItem.innerHTML = `
           <span>${transaction.transaction_type.toUpperCase()}</span>
-          ${transaction.ticker_symbol} - ${transaction.quantity} shares @ $${transaction.purchase_price_per_share || transaction.sell_price_per_share} each
+          ${transaction.ticker_symbol} + ${transaction.quantity} shares @ $${transaction.purchase_price_per_share || transaction.sell_price_per_share} each
           on ${new Date(transaction.transaction_datetime).toLocaleString()}
         `;
       }
@@ -383,6 +416,7 @@ async function displayTransactionSummary() {
     totalAmountElement.textContent = totalAmount.toFixed(2);
   }
 }
+
 
 // Function to show the selected view and hide others
 function showView(viewId) {
