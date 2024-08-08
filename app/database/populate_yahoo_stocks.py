@@ -39,8 +39,6 @@ sp500_tickers = [
     "WRB", "WST", "WY", "WYNN", "XEL", "XOM", "XRAY", "XYL", "YUM", "ZBH", "ZBRA", "ZION", "ZTS"
 ]
 
-
-
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
