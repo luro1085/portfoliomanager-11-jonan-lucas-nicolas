@@ -147,18 +147,33 @@ def get_assets():
 def update_assets(ticker_symbol, quantity, transaction_price, transaction_type, cash_amount=None):
     if ticker_symbol:
         asset = Assets.query.filter_by(ticker_symbol=ticker_symbol).first()
-        
+
         if asset:
-            if transaction_type == 'buy': 
+            if transaction_type == 'buy':
                 asset.total_quantity += quantity
-                asset.total_cost = asset.total_cost + (Decimal(transaction_price) * quantity)
+                asset.total_cost += Decimal(transaction_price) * quantity
             elif transaction_type == 'sell':
-                if asset.total_quantity >= quantity:    
+                if asset.total_quantity >= quantity:
+                    remaining_quantity_to_sell = quantity
+                    purchases = Transactions.query.filter_by(ticker_symbol=ticker_symbol, transaction_type='buy').order_by(Transactions.transaction_datetime).all()
+
+                    total_cost_to_deduct = Decimal(0)
+                    for purchase in purchases:
+                        if remaining_quantity_to_sell <= 0:
+                            break
+                        if purchase.quantity <= remaining_quantity_to_sell:
+                            total_cost_to_deduct += Decimal(purchase.quantity) * Decimal(purchase.purchase_price_per_share)
+                            remaining_quantity_to_sell -= purchase.quantity
+                        else:
+                            total_cost_to_deduct += Decimal(remaining_quantity_to_sell) * Decimal(purchase.purchase_price_per_share)
+                            remaining_quantity_to_sell = 0
+
+                    asset.total_cost -= total_cost_to_deduct
                     asset.total_quantity -= quantity
-                    asset.total_cost = asset.total_cost - (Decimal(transaction_price) * quantity)
+
                     if asset.total_quantity == 0:
                         db.session.delete(asset)
-            else: 
+            else:
                 return False
         else:
             if transaction_type == 'buy':
@@ -167,7 +182,7 @@ def update_assets(ticker_symbol, quantity, transaction_price, transaction_type, 
                     ticker_symbol=ticker_symbol,
                     company_name=Stocks.query.filter_by(ticker_symbol=ticker_symbol).first().company_name,
                     total_quantity=quantity,
-                    total_cost=quantity * transaction_price
+                    total_cost=Decimal(transaction_price) * quantity
                 )
                 db.session.add(new_asset)
             else:
@@ -191,6 +206,8 @@ def update_assets(ticker_symbol, quantity, transaction_price, transaction_type, 
 
     db.session.commit()
     return True
+
+
 
     
     
@@ -316,52 +333,46 @@ def calculate_unrealized_realized():
     realized_gains = Decimal(0)
     stock_details = []
 
-    purchase_costs = {}
-    
     for asset in assets:
         if asset.asset_type == 'stock' and asset.total_quantity > 0:
             current_price = yf.Ticker(asset.ticker_symbol).info.get('currentPrice')
-            if current_price:
-                total_market_value = (Decimal(current_price) * asset.total_quantity).quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP)
-                cost_value = asset.total_cost.quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP)
-                total_value_change = (total_market_value - cost_value).quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP)
-                percentage_value_change = ((total_value_change / cost_value) * 100).quantize(Decimal('0.00001'), rounding=ROUND_HALF_UP) if cost_value != 0 else Decimal(0)
+            if not current_price:
+                return jsonify({'message': 'price not found'})
 
-                unrealized_gains += total_value_change
+            total_market_value = (Decimal(current_price) * asset.total_quantity).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            cost_value = asset.total_cost.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_value_change = (total_market_value - cost_value).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            percentage_value_change = ((total_value_change / cost_value) * 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) if cost_value != 0 else Decimal(0)
 
-                stock_details.append({
-                    'ticker_symbol': asset.ticker_symbol,
-                    'company_name': asset.company_name,
-                    'total_cost': f"{cost_value}",
-                    'total_market_value': f"{total_market_value}",
-                    'total_value_change_from_cost': f"{total_value_change}",
-                    'percentage_value_change_from_cost': f"{percentage_value_change}"
-                })
-    
-    for transaction in transactions:
-        if transaction.transaction_type == 'buy':
-            if transaction.ticker_symbol not in purchase_costs:
-                purchase_costs[transaction.ticker_symbol] = []
-            purchase_costs[transaction.ticker_symbol].append({
-                'quantity': transaction.quantity,
-                'price_per_share': transaction.purchase_price_per_share
+            unrealized_gains += total_value_change
+
+            stock_details.append({
+                'ticker_symbol': asset.ticker_symbol,
+                'company_name': asset.company_name,
+                'total_cost': f"{cost_value}",
+                'total_market_value': f"{total_market_value}",
+                'total_value_change_from_cost': f"{total_value_change}",
+                'percentage_value_change_from_cost': f"{percentage_value_change}"
             })
-        elif transaction.transaction_type == 'sell':
+
+    for transaction in transactions:
+        if transaction.transaction_type == 'sell':
             quantity_to_sell = transaction.quantity
             total_cost = Decimal(0)
-            
-            while quantity_to_sell > 0 and transaction.ticker_symbol in purchase_costs and purchase_costs[transaction.ticker_symbol]:
-                purchase = purchase_costs[transaction.ticker_symbol][0]
-                if purchase['quantity'] <= quantity_to_sell:
-                    total_cost += (purchase['quantity'] * purchase['price_per_share']).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
-                    quantity_to_sell -= purchase['quantity']
-                    purchase_costs[transaction.ticker_symbol].pop(0)
+
+            purchases = Transactions.query.filter_by(ticker_symbol=transaction.ticker_symbol, transaction_type='buy').order_by(Transactions.transaction_datetime).all()
+            while quantity_to_sell > 0 and purchases:
+                purchase = purchases[0]
+                if purchase.quantity <= quantity_to_sell:
+                    total_cost += Decimal(purchase.quantity) * Decimal(purchase.purchase_price_per_share)
+                    quantity_to_sell -= purchase.quantity
+                    purchases.pop(0)
                 else:
-                    total_cost += (quantity_to_sell * purchase['price_per_share']).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
-                    purchase['quantity'] -= quantity_to_sell
+                    total_cost += Decimal(quantity_to_sell) * Decimal(purchase.purchase_price_per_share)
+                    purchase.quantity -= quantity_to_sell
                     quantity_to_sell = 0
-            
-            realized_gains += (transaction.sale_revenue - total_cost).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+            realized_gains += (Decimal(transaction.sale_revenue) - total_cost).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     return {
         'unrealized_gains': f"{unrealized_gains}",

@@ -39,6 +39,7 @@ sp500_tickers = [
     "WRB", "WST", "WY", "WYNN", "XEL", "XOM", "XRAY", "XYL", "YUM", "ZBH", "ZBRA", "ZION", "ZTS"
 ]
 
+
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -56,7 +57,6 @@ def fetch_stock_data(ticker):
         latest_data = data.iloc[-1]
         ticker_symbol = ticker
         company_name = stock.info['shortName']
-        current_price = stock.info.get('currentPrice')
         price_timestamp = datetime.now()
         opening_price = latest_data['Open']
         closing_price = latest_data['Close']
@@ -64,7 +64,6 @@ def fetch_stock_data(ticker):
         return {
             'ticker_symbol': ticker,
             'company_name': company_name,
-            'current_price': current_price,
             'price_timestamp': price_timestamp,
             'opening_price': opening_price,
             'closing_price': closing_price
@@ -78,17 +77,16 @@ for ticker in sp500_tickers:
     
     if latest_data:
         sql = """
-        INSERT INTO stocks (ticker_symbol, company_name, current_price, price_timestamp, opening_price, closing_price)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO stocks (ticker_symbol, company_name, price_timestamp, opening_price, closing_price)
+        VALUES (%s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE
             company_name=VALUES(company_name),
-            current_price=VALUES(current_price),
             price_timestamp=VALUES(price_timestamp),
             opening_price=VALUES(opening_price),
             closing_price=VALUES(closing_price)
         """
         val = (
-            latest_data['ticker_symbol'], latest_data['company_name'], latest_data['current_price'], 
+            latest_data['ticker_symbol'], latest_data['company_name'], 
             latest_data['price_timestamp'], latest_data['opening_price'], latest_data['closing_price']
         )
         mycursor.execute(sql, val)
