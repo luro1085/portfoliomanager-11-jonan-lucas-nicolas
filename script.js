@@ -269,6 +269,23 @@ async function withdraw() {
   }
 }
 
+// Function to filter stocks based on search Input
+function filterStocks(){
+  const searchQuery = document.getElementById('stockSearchBar').value.toLowerCase();
+  const stockElements = document.querySelectorAll('#accountDetails .stock');
+
+  stockElements.forEach(stockElement => {
+    const stockName = stockElement.querySelector('.info strong').textContent.toLowerCase();
+
+    if(stockName.includes(searchQuery)){
+      stockElement.style.display = 'block';
+    }
+    else {
+      stockElement.style.display = 'none';
+    }
+  });
+}
+
 // Function to display stocks
 async function displayStocks() {
   const accountDetails = document.getElementById('accountDetails');
