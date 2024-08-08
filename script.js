@@ -171,17 +171,29 @@ async function displayAssets() {
     // Sort assets alphabetically by ticker symbol
     assetsData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
 
+    // Calculate total gains
+    const total_gains = (parseFloat(profitLossData.unrealized_gains) + parseFloat(profitLossData.realized_gains)).toFixed(2);
+
+    // Determine the color class based on the value
+    const unrealizedGainsClass = parseFloat(profitLossData.unrealized_gains) >= 0 ? 'positive-change' : 'negative-change';
+    const realizedGainsClass = parseFloat(profitLossData.realized_gains) >= 0 ? 'positive-change' : 'negative-change';
+    const totalGainsClass = parseFloat(total_gains) >= 0 ? 'positive-change' : 'negative-change';
+
     // Display overall profit/loss
     const profitLossSummary = document.createElement('div');
     profitLossSummary.classList.add('profit-loss-summary');
     profitLossSummary.innerHTML = `
-      <p>Unrealized Gains: $${profitLossData.unrealized_gains}</p>
-      <p>Realized Gains: $${profitLossData.realized_gains}</p>
+      <p class="${unrealizedGainsClass}">Unrealized Gains: $${profitLossData.unrealized_gains}</p>
+      <p class="${realizedGainsClass}">Realized Gains: $${profitLossData.realized_gains}</p>
+      <p class="${totalGainsClass}">Total Gains: $${total_gains}</p><br><br>
+      <h3>Your Shares</h3>
     `;
     assetsDetails.appendChild(profitLossSummary);
 
     assetsData.forEach(asset => {
-      if (asset.asset_type == 'stock') {
+      if (asset.asset_type === 'stock') {
+        const stockDetails = profitLossData.stock_details.find(stock => stock.ticker_symbol === asset.ticker_symbol);
+        const changeClass = parseFloat(stockDetails.percentage_value_change_from_cost) >= 0 ? 'positive-change' : 'negative-change';
         const assetElement = document.createElement('div');
         assetElement.classList.add('asset');
         const infoElement = document.createElement('div');
@@ -189,7 +201,9 @@ async function displayAssets() {
         infoElement.innerHTML = `
           <strong>${asset.company_name} (${asset.ticker_symbol})</strong><br>
           Quantity: ${asset.total_quantity}<br>
-          Total Cost: $${asset.total_cost}
+          Total Cost: $${asset.total_cost}<br>
+          Total Market Value: $${stockDetails.total_market_value}<br>
+          <p class="${changeClass}">Percentage Change from Cost: <b>${stockDetails.percentage_value_change_from_cost}%</b></p>
         `;
 
         // Create a share number selector for selling shares
@@ -218,14 +232,14 @@ async function displayAssets() {
         assetElement.appendChild(sellButton);
         assetsDetails.appendChild(assetElement);
       }
-    }
-  );
-    
+    });
 
     // Create the chart after displaying the assets
     createAssetsOverviewChart();
   }
 }
+
+
 
 // Function to display cash account details
 async function displayCashAccount() {
@@ -370,8 +384,7 @@ async function displayStocks() {
         <strong>${stock.company_name} (${stock.ticker_symbol})</strong><br>
         Opening Price: $${stock.opening_price}<br>
         Closing Price: $${stock.closing_price}<br>
-        Current Price: $${stock.current_price}<br>
-        Price Timestamp: ${stock.price_timestamp}
+        Current Price: <b> $${stock.current_price}</b> <br>
       `;
       // Create a share number selector
       const shareSelector = document.createElement('input');
@@ -508,13 +521,13 @@ async function displayTransactionSummary() {
   }
 }
 
-
+let count = 0;
 // Function to show the selected view and hide others
 function showView(viewId) {
   const views = document.querySelectorAll('.view');
   views.forEach(view => view.style.display = 'none');
   document.getElementById(viewId).style.display = 'block';
-  
+
   if (viewId === 'assetsOverviewView') {
     displayAssets();
   }
@@ -528,7 +541,10 @@ function showView(viewId) {
   }
 
   if (viewId === 'stocksView') {
-    displayStocks();
+    if (count == 0) {
+      displayStocks();
+    }
+    count++;
   }
 }
 // Initialize by showing the assets overview view

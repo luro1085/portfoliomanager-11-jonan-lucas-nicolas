@@ -119,17 +119,34 @@ nav button:hover {
 
 /* Profit/Loss Summary Specific Styles */
 .profit-loss-summary {
-  background-color: #e0f7fa;
+  background-color: #ffffff;
   padding: 15px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
 }
 
 .profit-loss-summary p {
   margin: 0;
   padding: 5px 0;
   font-weight: bold;
-  color: #00695c;
+  color: #000000;
+}
+
+/* CSS classes for percentage value change */
+positive-change {
+  color: darkgreen;
+}
+
+negative-change {
+  color: darkred;
+}
+
+.positive-change {
+  color: darkgreen;
+}
+
+.negative-change {
+  color: darkred;
 }
 
 .share-selector {

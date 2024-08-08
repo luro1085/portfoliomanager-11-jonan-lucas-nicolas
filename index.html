@@ -28,8 +28,11 @@
       <!-- Chart Container -->
       <canvas id="assetsOverviewChart" width="400" height="200"></canvas>
       <!-- Assets Details -->
-      <div id="profitLossSummary" class="profit-loss-summary"></div>
-      <div id="assetsDetails"></div>
+      <h3>Profit/Loss Summary</h3>
+      <div id="assetsDetails">
+        <div id="profitLossSummary" class="profit-loss-summary"></div>
+        <p>Your Shares</p>
+      </div>
     </div>
     
     <!-- Cash Account View -->
@@ -53,9 +56,9 @@
       <h2>Transactions</h2>
       <div class="transaction-overview">
         <h3>Transaction Summary (Last 30 Days)</h3>
-        <p>Total Buys: <span id="totalBuys"></span></p>
-        <p>Total Sells: <span id="totalSells"></span></p>
-        <p>Total Amount Traded: $<span id="totalAmount"></span></p>
+        <p>Lifetime Shares Bought: <span id="totalBuys"></span></p>
+        <p>Lifetime Shares Sold: <span id="totalSells"></span></p>
+        <p>Lifetime Amount Traded: $<span id="totalAmount"></span></p>
       </div>
       <div class="transaction-summary">
         <h3>Recent Transactions</h3>
@@ -68,6 +71,9 @@
       <h2>Available Stocks</h2>
       <!-- Search Bar -->
       <input type="text" id="stockSearchBar" placeholder="Search for stocks..." oninput="filterStocks()">
+      <nav>
+        <button onclick="displayStocks()">Refresh</button>
+      </nav>
       <div id="accountDetails"></div>
     </div>
   </div>
