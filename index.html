@@ -19,7 +19,7 @@
       <button onclick="showView('assetsOverviewView')">Assets Overview</button>
       <button onclick="showView('cashAccountView')">Cash Account</button>
       <button onclick="showView('transactionsView')">Transactions</button>
-      <button onclick="fetchCurrentPrices()">Stocks</button>
+      <button onclick="showView('stocksView')">Stocks</button>
     </nav>
     
     <!-- Assets Overview View -->
@@ -28,6 +28,7 @@
       <!-- Chart Container -->
       <canvas id="assetsOverviewChart" width="400" height="200"></canvas>
       <!-- Assets Details -->
+      <div id="profitLossSummary" class="profit-loss-summary"></div>
       <div id="assetsDetails"></div>
     </div>
     

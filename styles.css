@@ -117,6 +117,21 @@ nav button:hover {
   font-weight: bold;
 }
 
+/* Profit/Loss Summary Specific Styles */
+.profit-loss-summary {
+  background-color: #e0f7fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.profit-loss-summary p {
+  margin: 0;
+  padding: 5px 0;
+  font-weight: bold;
+  color: #00695c;
+}
+
 .share-selector {
   width: 50px;
   margin: 0 10px;

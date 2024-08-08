@@ -70,6 +70,46 @@ async function fetchCashAccountData() {
   }
 }
 
+// Function to fetch profit/loss data from the API
+async function fetchProfitLossData() {
+  try {
+    const response = await fetch('http://127.0.0.1:5000/profit_loss');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const profitLossData = await response.json();
+    console.log(profitLossData);
+    return profitLossData;
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+  }
+}
+
+
+async function getCombinedStockData() {
+  const stocksData = await fetchStockData();
+  const currentPricesData = await fetchCurrentPrices();
+
+  if (stocksData && currentPricesData) {
+    const currentPricesMap = new Map();
+    currentPricesData.forEach(priceData => {
+      currentPricesMap.set(priceData.ticker_symbol, priceData.current_price);
+    });
+
+    const combinedData = stocksData.map(stock => {
+      const currentPrice = currentPricesMap.get(stock.ticker_symbol);
+      return {
+        ...stock,
+        current_price: currentPrice !== undefined ? currentPrice : "N/A"
+      };
+    });
+
+    return combinedData;
+  }
+
+  return [];
+}
+
 let assetsOverviewChart = null; // Global variable to hold the chart instance
 
 // Function to create a chart of assets overview
@@ -125,10 +165,20 @@ async function displayAssets() {
   const assetsDetails = document.getElementById('assetsDetails');
   assetsDetails.innerHTML = '';
   const assetsData = await fetchUserAssetData();
+  const profitLossData = await fetchProfitLossData();
 
-  if (assetsData) {
+  if (assetsData && profitLossData) {
     // Sort assets alphabetically by ticker symbol
     assetsData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
+
+    // Display overall profit/loss
+    const profitLossSummary = document.createElement('div');
+    profitLossSummary.classList.add('profit-loss-summary');
+    profitLossSummary.innerHTML = `
+      <p>Unrealized Gains: $${profitLossData.unrealized_gains}</p>
+      <p>Realized Gains: $${profitLossData.realized_gains}</p>
+    `;
+    assetsDetails.appendChild(profitLossSummary);
 
     assetsData.forEach(asset => {
       if (asset.asset_type == 'stock') {
@@ -305,13 +355,13 @@ function filterStocks(){
 async function displayStocks() {
   const accountDetails = document.getElementById('accountDetails');
   accountDetails.innerHTML = '';
-  const stocksData = await fetchStockData();
+  const combinedStockData = await getCombinedStockData();
 
-  if (stocksData) {
+  if (combinedStockData) {
     // Sort stocks alphabetically by ticker symbol
-    stocksData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
+    combinedStockData.sort((a, b) => a.ticker_symbol.localeCompare(b.ticker_symbol));
 
-    stocksData.forEach(stock => {
+    combinedStockData.forEach(stock => {
       const stockElement = document.createElement('div');
       stockElement.classList.add('stock');
       const infoElement = document.createElement('div');
@@ -349,6 +399,7 @@ async function displayStocks() {
     });
   }
 }
+
 
 // Function to buy stock
 async function buyStock(stock, numberOfShares) {
