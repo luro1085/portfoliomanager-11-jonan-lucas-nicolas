@@ -26,6 +26,21 @@ async function fetchStockData() {
   }
 }
 
+// Function to fetch current prices from the API
+async function fetchCurrentPrices() {
+  try {
+    const response = await fetch('http://127.0.0.1:5000/current_prices');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const currentPricesData = await response.json();
+    console.log(currentPricesData);
+    return currentPricesData;
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+  }
+}
+
 // Function to fetch transaction data from the API
 async function fetchTransactionData() {
   try {
