@@ -234,11 +234,12 @@ async function displayAssets() {
       }
     });
 
-    // Create the chart after displaying the assets
-    createAssetsOverviewChart();
+    // Create the chart only if assetsData has more than one element
+    if (assetsData.length > 1) {
+      createAssetsOverviewChart();
+    }
   }
 }
-
 
 
 // Function to display cash account details
@@ -556,7 +557,6 @@ function showView(viewId) {
     } else {
       displayAssets();
     }
-    count++;
   }
 
   if (viewId === 'cashAccountView') {
