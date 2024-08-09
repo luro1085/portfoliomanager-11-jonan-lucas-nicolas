@@ -133,14 +133,6 @@ nav button:hover {
 }
 
 /* CSS classes for percentage value change */
-positive-change {
-  color: darkgreen;
-}
-
-negative-change {
-  color: darkred;
-}
-
 .positive-change {
   color: darkgreen;
 }

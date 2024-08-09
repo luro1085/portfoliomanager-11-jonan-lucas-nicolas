@@ -285,31 +285,52 @@ async function displayCashAccount() {
 }
 
 // Function to deposit cash
-async function deposit() {
-  const amount = parseFloat(document.getElementById('cashAmount').value);
-  if (amount <= 0 || isNaN(amount)) {
-    alert("Please enter a valid amount to deposit.");
-    return;
-  }
+async function deposit(first_amount) {
+  if (first_amount != null) {
+    const amount = first_amount;
+    try {
+      const response = await fetch('http://127.0.0.1:5000/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: amount })
+      });
 
-  try {
-    const response = await fetch('http://127.0.0.1:5000/deposit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ amount: amount })
-    });
-
-    const result = await response.json();
-    if (response.ok) {
-      alert(result.message);
-      displayCashAccount(); // Refresh cash account details
-    } else {
-      alert(`Error: ${result.message}`);
+      const result = await response.json();
+      if (response.ok) {
+        displayCashAccount(); // Refresh cash account details
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
     }
-  } catch (error) {
-    console.error('Error:', error);
+  } else {
+    const amount = parseFloat(document.getElementById('cashAmount').value);
+    if (amount <= 0 || isNaN(amount)) {
+      alert("Please enter a valid amount to deposit.");
+      return;
+    }
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: amount })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        displayCashAccount(); // Refresh cash account details
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
   }
 }
 
@@ -338,7 +359,6 @@ async function withdraw() {
 
     const result = await response.json();
     if (response.ok) {
-      alert(result.message);
       displayCashAccount(); // Refresh cash account details
     } else {
       alert(`Error: ${result.message}`);
@@ -384,7 +404,7 @@ async function displayStocks() {
         <strong>${stock.company_name} (${stock.ticker_symbol})</strong><br>
         Opening Price: $${stock.opening_price}<br>
         Closing Price: $${stock.closing_price}<br>
-        Current Price: <b> $${stock.current_price}</b> <br>
+        Current Price: <b> $${stock.current_price.toFixed(2)}</b> <br>
       `;
       // Create a share number selector
       const shareSelector = document.createElement('input');
@@ -434,6 +454,7 @@ async function buyStock(stock, numberOfShares) {
     if (response.ok) {
       displayAssets(); // Refresh assets view
       displayTransactionSummary(); // Refresh transactions view
+      showView('assetsOverviewView'); //Switch view
     } else {
       alert(`Error: ${result.message}`);
     }
@@ -529,7 +550,13 @@ function showView(viewId) {
   document.getElementById(viewId).style.display = 'block';
 
   if (viewId === 'assetsOverviewView') {
-    displayAssets();
+    if (count == 0) {
+      deposit(10000);
+      displayAssets();
+    } else {
+      displayAssets();
+    }
+    count++;
   }
 
   if (viewId === 'cashAccountView') {
