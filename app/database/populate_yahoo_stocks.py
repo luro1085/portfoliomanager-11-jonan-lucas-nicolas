@@ -5,6 +5,8 @@ import json
 import yfinance as yf
 from datetime import datetime
 
+#populate_yahoo works
+
 sp500_tickers = [
     "A", "AAL", "AAP", "AAPL", "ABBV", "ABT", "ACN", "ADBE", "ADI", "ADM", "ADP", "ADSK", "AEE", "AEP", "AES", "AFL", 
     "AIG", "AIZ", "AJG", "AKAM", "ALB", "ALGN", "ALK", "ALL", "ALLE", "AMAT", "AMCR", "AMD", "AME", "AMGN", "AMP", 
