@@ -455,7 +455,6 @@ async function buyStock(stock, numberOfShares) {
     if (response.ok) {
       displayAssets(); // Refresh assets view
       displayTransactionSummary(); // Refresh transactions view
-      showView('assetsOverviewView'); //Switch view
     } else {
       alert(`Error: ${result.message}`);
     }
